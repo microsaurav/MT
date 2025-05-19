@@ -208,7 +208,52 @@ export const barChartOptionsConsumption = {
   },
 };
 
-export const pieChartOptions = {
+export const pieChartOptionsBusinessOutcomes = {
+  labels: ["Revenue Generation", "Customer Experience", "Operation Effieciency","Regulatory"],
+  colors: ["#FF5733", "#6AD2FF", "#EFF4FB", "#FFC107"],
+  chart: {
+    width: "50px",
+  },
+  states: {
+    hover: {
+      filter: {
+        type: "none",
+      },
+    },
+  },
+  legend: {
+    show: false,
+  },
+  dataLabels: {
+    enabled: false,
+  },
+  hover: { mode: null },
+  plotOptions: {
+    donut: {
+      expandOnClick: false,
+      donut: {
+        labels: {
+          show: false,
+        },
+      },
+    },
+  },
+  fill: {
+    colors: ["#FF5733", "#6AD2FF", "#EFF4FB","#FFC107"],
+  },
+  tooltip: {
+    enabled: true,
+    theme: "dark",
+  },
+};
+
+export const pieChartDataBusinessOutcomes = [1];
+
+// Pie Chart Workstream
+// This is the pie chart for workstream
+// It shows the distribution of CRs based on workstream
+
+export const pieChartOptionsWorkStream = {
   labels: ["Revenue Generation", "Customer Experience", "Operation Effieciency","Regulatory"],
   colors: ["#4318FF", "#6AD2FF", "#EFF4FB", "#FFC107"],
   chart: {
@@ -247,8 +292,7 @@ export const pieChartOptions = {
   },
 };
 
-export const pieChartData = [43, 25, 12, 10];
-
+export const pieChartDataWorkStream = [47, 25, 12, 10];
 // Total Spent Default
 
 export const lineChartDataTotalSpent = [

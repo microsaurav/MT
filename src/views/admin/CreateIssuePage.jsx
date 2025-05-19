@@ -21,63 +21,67 @@ import Card from 'components/card/Card'; // Your custom Card component
 
 export default function CreateIssueModal() {
   const [issueData, setIssueData] = useState({
-    project: '',
-    issueType:'',
-    issueDescription: '',
-    severity: '',
-    priority: '',
-    dueDate: '',
-    reporter: '',
-    assignee: '',
-    tags: [],
-  });
-  const [itbugData, setITBugData] = useState({
-    workstream: '',
-    defectType:'',
-    productType:'',
+    issueType: '',
+    status: 'Open',
+    workstreamStreamAndBusinessFunction: '',
+    defectType: '',
+    productType: '',
     primaryApplication: '',
     summary: '',
-    defectDescription: '',
+    description: '',
     linkedIssue: '',
     severity: '',
     priority: '',
-    environment:'',
-    impactedSystem:[],
-    module:'',
+    environment: '',
+    impactedSystems: '',
+    module: '',
     assignee: '',
-    steps:'',
-    actualOutput:'',
-    expectedOutput:'',
-    noofTestCases:'',
-
+    stepsToReproduce: '',
+    actualOutput: '',
+    expectedOutput: '',
+    noOfTestCaseImpacted: '',
+    attachment: '',
+    crName: '',
+    businessOwner: '',
+    inScope: '',
+    outScope: '',
+    businessNeed: '',
+    businessNeedBenefitsDetails: '',
+    reasonForRaisingChildCR: '',
+    parentCR: '',
+    biudashboardNeeded: false,
+    projectName: '',
+    gtmplanNeeded: false,
+    justification: ''
   });
-  const [apdmbugData, setApdmBugData] = useState({
-    issueType:'',
-    recurringType: '',
-    productType:'',
-    reportedBy: '',
-    business: '',
-    primaryApplication: '',
-    summary: '',
-    defectDesciption: '',
-    priority: '',
-    severity:'',
-    impactedSystem:[],
-    linkedIssue:'',
-    assignee: '',
-    actualOutput:'',
-    expectedOutput:'',
-
-
-  });
+  
   const { isOpen, onOpen, onClose } = useDisclosure();
   const textColor = useColorModeValue('secondaryGray.900', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
   
   // Handling form submission
-  const handleFormSubmit = () => {
-    console.log('Form Submitted', issueData);
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+  
+    try {
+      const response = await fetch('http://localhost:8080/api/PostIssuedetails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(issueData),
+      });
+  
+      if (response.ok) {
+        const result = await response.json();
+        alert('Form submitted successfully!');
+        console.log(result);
+      } else {
+        console.error('Submission error:', await response.text());
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+    }
   };
+  
   // Options for the dropdown
   
   // Handling tags addition
@@ -114,10 +118,10 @@ console.log("IssueData",issueData.project)
                 Project
               </FormLabel>
               <Select
-                id="project"
-                value={issueData.project}
+                id="projectName"
+                value={issueData.projectName}
                 onChange={(e) =>
-                  setIssueData({ ...issueData, project: e.target.value })
+                  setIssueData({ ...issueData, projectName: e.target.value })
                 }
                 borderColor={borderColor}
                 _hover={{ borderColor: 'brandScheme.400' }}
@@ -127,7 +131,7 @@ console.log("IssueData",issueData.project)
                 <option value="" selected disabled>
                   Select an Option
                 </option>
-                <option value="IT">ABHI Change Request Management</option>
+                <option value="ABHI Change Request Management">ABHI Change Request Management</option>
                 {/* <option value="Prodcution">
                   ABHI Products Defect Management
                 </option> */}
@@ -169,24 +173,24 @@ console.log("IssueData",issueData.project)
            
             
           </SimpleGrid>
-          {issueData.project === 'IT' &&
+          {issueData.projectName === 'ABHI Change Request Management' &&
             (issueData.issueType === 'CR' ||
               issueData.issueType === 'Project' ||
               issueData.issueType === 'BAU') && (
               <>
                 <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
                   {/* Issue Type */}
-                  <FormControl isRequired>
+                  {/* <FormControl isRequired>
                     <FormLabel htmlFor="issueType" color="gray.400">
                       Project/CR Name
                     </FormLabel>
                     <Textarea
-                      id="issueDescription"
-                      value={issueData.issueDescription}
+                      id="projectName"
+                      value={issueData.projectName}
                       onChange={(e) =>
                         setIssueData({
                           ...issueData,
-                          issueDescription: e.target.value,
+                          projectName: e.target.value,
                         })
                       }
                       borderColor={borderColor}
@@ -196,7 +200,7 @@ console.log("IssueData",issueData.project)
                       resize="none"
                       minHeight="20px"
                     />
-                  </FormControl>
+                  </FormControl> */}
                 </SimpleGrid>
 
                 <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
@@ -206,9 +210,9 @@ console.log("IssueData",issueData.project)
                     </FormLabel>
                     <Select
                       id="severity"
-                      value={issueData.severity}
+                      value={issueData.businessOwner}
                       onChange={(e) =>
-                        setIssueData({ ...issueData, severity: e.target.value })
+                        setIssueData({ ...issueData, businessOwner: e.target.value })
                       }
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
@@ -234,12 +238,12 @@ console.log("IssueData",issueData.project)
                       Summary
                     </FormLabel>
                     <Textarea
-                      id="issueDescription"
-                      value={issueData.issueDescription}
+                      id="summary"
+                      value={issueData.summary}
                       onChange={(e) =>
                         setIssueData({
                           ...issueData,
-                          issueDescription: e.target.value,
+                          summary: e.target.value,
                         })
                       }
                       borderColor={borderColor}
@@ -257,12 +261,12 @@ console.log("IssueData",issueData.project)
                       Issue Description
                     </FormLabel>
                     <Textarea
-                      id="issueDescription"
-                      value={issueData.issueDescription}
+                      id="description"
+                      value={issueData.description}
                       onChange={(e) =>
                         setIssueData({
                           ...issueData,
-                          issueDescription: e.target.value,
+                          description: e.target.value,
                         })
                       }
                       borderColor={borderColor}
@@ -285,12 +289,12 @@ console.log("IssueData",issueData.project)
                         In Scope
                       </FormLabel>
                       <Textarea
-                        id="issueDescription"
-                        value={issueData.issueDescription}
+                        id="inScope"
+                        value={issueData.inScope}
                         onChange={(e) =>
                           setIssueData({
                             ...issueData,
-                            issueDescription: e.target.value,
+                            inScope: e.target.value,
                           })
                         }
                         borderColor={borderColor}
@@ -312,12 +316,12 @@ console.log("IssueData",issueData.project)
                         Out Scope
                       </FormLabel>
                       <Textarea
-                        id="issueDescription"
-                        value={issueData.issueDescription}
+                        id="outScope"
+                        value={issueData.outScope}
                         onChange={(e) =>
                           setIssueData({
                             ...issueData,
-                            issueDescription: e.target.value,
+                            outScope: e.target.value,
                           })
                         }
                         borderColor={borderColor}
@@ -374,10 +378,10 @@ console.log("IssueData",issueData.project)
                       WorkStream and Business Function
                     </FormLabel>
                     <Select
-                      id="workstream"
-                      value={issueData.priority}
+                      id="workstreamStreamAndBusinessFunction"
+                      value={issueData.workstreamStreamAndBusinessFunction}
                       onChange={(e) =>
-                        setIssueData({ ...issueData, priority: e.target.value })
+                        setIssueData({ ...issueData, workstreamStreamAndBusinessFunction: e.target.value })
                       }
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
@@ -401,197 +405,207 @@ console.log("IssueData",issueData.project)
                 <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
                   {/* Assignee */}
                   <FormControl>
-                    <FormLabel htmlFor="assignee" color="gray.400">
-                      Module (Multi-select)
-                    </FormLabel>
-                    <Multiselect
-                      placeholder="Select an Option"
-                      options={[
-                        { value: 'active', label: 'Active Days' },
-                        { value: 'claims', label: 'Claims' },
-                        { value: 'digital', label: 'Digital Health Assesment' },
-                      ]}
-                      displayValue="label"
-                      style={{
-                        control: {
-                          borderColor: borderColor,
-                          backgroundColor: 'white',
-                          padding: '10px 12px',
-                          borderRadius: '8px',
-                          fontSize: '16px',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                          transition: 'border-color 0.2s ease',
-                        },
-                        optionContainer: {
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                          marginTop: '8px',
-                          zIndex: 999,
-                          backgroundColor: '#f9f9f9',
-                          maxHeight: '200px', // Add max height to the dropdown container
-                          overflowY: 'auto', // Allow scrolling for overflow
-                        },
-                        option: {
-                          padding: '10px',
-                          fontSize: '14px',
-                          backgroundColor: 'white',
-                          borderRadius: '8px',
-                          color: '#333',
-                          '&:hover': {
-                            backgroundColor: '#007bff', // Hover color
-                            color: '#fff',
-                          },
-                          '&:active': {
-                            backgroundColor: '#0056b3', // Active color
-                            color: '#fff',
-                          },
-                        },
-                        selectedList: {
-                          padding: '4px 10px',
-                          backgroundColor: '#007bff',
-                          borderRadius: '8px',
-                          marginRight: '8px',
-                          fontSize: '14px',
-                          display: 'inline-block',
-                          marginBottom: '4px',
-                          color: '#fff',
-                        },
-                        chip: {
-                          backgroundColor: '#007bff',
-                          fontSize: '14px',
-                          color: '#fff',
-                          padding: '6px 12px',
-                          borderRadius: '16px',
-                          margin: '2px',
-                        },
-                      }}
-                    />
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel htmlFor="tags" color="gray.400">
-                      WorkStream and Business Function
-                    </FormLabel>
-                    <Select
-                      id="workstream"
-                      value={issueData.priority}
-                      onChange={(e) =>
-                        setIssueData({ ...issueData, priority: e.target.value })
-                      }
-                      borderColor={borderColor}
-                      _hover={{ borderColor: 'brandScheme.400' }}
-                      _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
-                    >
-                      <option value="" disabled selected>
-                        Select an option
-                      </option>
-                      <option value="product">Product & Pricing</option>
-                      <option value="digital">Digital</option>
-                      <option value="operation">Operation</option>
-                      <option value="sales">Sales</option>
-                      <option value="marketing">Marketing</option>
-                      <option value="legal">Legal</option>
-                      <option value="finance">Finance</option>
-                      <option value="IT">IT</option>
-                    </Select>
-                  </FormControl>
+  <FormLabel htmlFor="module" color="gray.400">
+    Module (Multi-select)
+  </FormLabel>
+  <Multiselect
+    placeholder="Select an Option"
+    options={[
+      { value: 'active', label: 'Active Days' },
+      { value: 'claims', label: 'Claims' },
+      { value: 'digital', label: 'Digital Health Assessment' },
+    ]}
+    displayValue="label"
+    selectedValues={
+      issueData.module
+        ? issueData.module.split(',').map((val) => ({
+            value: val,
+            label:
+              val === 'active'
+                ? 'Active Days'
+                : val === 'claims'
+                ? 'Claims'
+                : 'Digital Health Assessment',
+          }))
+        : []
+    }
+    onSelect={(selectedList) =>
+      setIssueData({
+        ...issueData,
+        module: selectedList.map((item) => item.value).join(','),
+      })
+    }
+    onRemove={(selectedList) =>
+      setIssueData({
+        ...issueData,
+        module: selectedList.map((item) => item.value).join(','),
+      })
+    }
+    style={{
+      control: {
+        borderColor: borderColor,
+        backgroundColor: 'white',
+        padding: '10px 12px',
+        borderRadius: '8px',
+        fontSize: '16px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        transition: 'border-color 0.2s ease',
+      },
+      optionContainer: {
+        borderRadius: '8px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        marginTop: '8px',
+        zIndex: 999,
+        backgroundColor: '#f9f9f9',
+        maxHeight: '200px',
+        overflowY: 'auto',
+      },
+      option: {
+        padding: '10px',
+        fontSize: '14px',
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        color: '#333',
+      },
+      selectedList: {
+        padding: '4px 10px',
+        backgroundColor: '#007bff',
+        borderRadius: '8px',
+        marginRight: '8px',
+        fontSize: '14px',
+        display: 'inline-block',
+        marginBottom: '4px',
+        color: '#fff',
+      },
+      chip: {
+        backgroundColor: '#007bff',
+        fontSize: '14px',
+        color: '#fff',
+        padding: '6px 12px',
+        borderRadius: '16px',
+        margin: '2px',
+      },
+    }}
+  />
+</FormControl>
+
                 </SimpleGrid>
                 <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
                   {/* Assignee */}
                   <FormControl>
-                    <FormLabel htmlFor="assignee" color="gray.400">
-                      Business Need (Multi-select)
-                    </FormLabel>
-                    <Multiselect
-                      placeholder="Select an Option"
-                      options={[
-                        { value: 'audit', label: 'Audit Observation' },
-                        { value: 'cost', label: 'Cost Reduction/Avoidence' },
-                        { value: 'customer', label: 'Customer Experience' },
-                        {
-                          value: 'customer On_boarding',
-                          label: 'Customer OnBoarding',
-                        },
-                        {
-                          value: 'distributor',
-                          label: 'Distributor Experience',
-                        },
-                        { value: 'employee', label: 'Employee Experience' },
-                        { value: 'operation', label: 'Operation Efficiency' },
-                        { value: 'partner', label: 'Partner On-Boarding' },
-                        { value: 'regulatory', label: 'Regulatory' },
-                        { value: 'revenue', label: 'Revenue Generation' },
-                        { value: 'risk management', label: 'Risk Management' },
-                        { value: 'tech', label: 'Tech Scalability' },
-                      ]}
-                      displayValue="label"
-                      style={{
-                        control: {
-                          borderColor: borderColor,
-                          backgroundColor: 'white',
-                          padding: '10px 12px',
-                          borderRadius: '8px',
-                          fontSize: '16px',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                          transition: 'border-color 0.2s ease',
-                        },
-                        optionContainer: {
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                          marginTop: '8px',
-                          zIndex: 999,
-                          backgroundColor: '#f9f9f9',
-                          maxHeight: '200px', // Add max height to the dropdown container
-                          overflowY: 'auto', // Allow scrolling for overflow
-                        },
-                        option: {
-                          padding: '10px',
-                          fontSize: '14px',
-                          backgroundColor: 'white',
-                          borderRadius: '8px',
-                          color: '#333',
-                          '&:hover': {
-                            backgroundColor: '#007bff', // Hover color
-                            color: '#fff',
-                          },
-                          '&:active': {
-                            backgroundColor: '#0056b3', // Active color
-                            color: '#fff',
-                          },
-                        },
-                        selectedList: {
-                          padding: '4px 10px',
-                          backgroundColor: '#007bff',
-                          borderRadius: '8px',
-                          marginRight: '8px',
-                          fontSize: '14px',
-                          display: 'inline-block',
-                          marginBottom: '4px',
-                          color: '#fff',
-                        },
-                        chip: {
-                          backgroundColor: '#007bff',
-                          fontSize: '14px',
-                          color: '#fff',
-                          padding: '6px 12px',
-                          borderRadius: '16px',
-                          margin: '2px',
-                        },
-                      }}
-                    />
-                  </FormControl>
+  <FormLabel htmlFor="businessNeed" color="gray.400">
+    Business Need (Multi-select)
+  </FormLabel>
+  <Multiselect
+    placeholder="Select an Option"
+    options={[
+      { value: 'audit', label: 'Audit Observation' },
+      { value: 'cost', label: 'Cost Reduction/Avoidence' },
+      { value: 'customer', label: 'Customer Experience' },
+      { value: 'customer On_boarding', label: 'Customer OnBoarding' },
+      { value: 'distributor', label: 'Distributor Experience' },
+      { value: 'employee', label: 'Employee Experience' },
+      { value: 'operation', label: 'Operation Efficiency' },
+      { value: 'partner', label: 'Partner On-Boarding' },
+      { value: 'regulatory', label: 'Regulatory' },
+      { value: 'revenue', label: 'Revenue Generation' },
+      { value: 'risk management', label: 'Risk Management' },
+      { value: 'tech', label: 'Tech Scalability' },
+    ]}
+    displayValue="label"
+    selectedValues={
+      issueData.businessNeed
+        ? issueData.businessNeed.split(',').map((val) => {
+            const option = [
+              { value: 'audit', label: 'Audit Observation' },
+              { value: 'cost', label: 'Cost Reduction/Avoidence' },
+              { value: 'customer', label: 'Customer Experience' },
+              { value: 'customer On_boarding', label: 'Customer OnBoarding' },
+              { value: 'distributor', label: 'Distributor Experience' },
+              { value: 'employee', label: 'Employee Experience' },
+              { value: 'operation', label: 'Operation Efficiency' },
+              { value: 'partner', label: 'Partner On-Boarding' },
+              { value: 'regulatory', label: 'Regulatory' },
+              { value: 'revenue', label: 'Revenue Generation' },
+              { value: 'risk management', label: 'Risk Management' },
+              { value: 'tech', label: 'Tech Scalability' },
+            ].find((o) => o.value === val);
+            return option || { value: val, label: val };
+          })
+        : []
+    }
+    onSelect={(selectedList) =>
+      setIssueData({
+        ...issueData,
+        businessNeed: selectedList.map((item) => item.value).join(','),
+      })
+    }
+    onRemove={(selectedList) =>
+      setIssueData({
+        ...issueData,
+        businessNeed: selectedList.map((item) => item.value).join(','),
+      })
+    }
+    style={{
+      control: {
+        borderColor: borderColor,
+        backgroundColor: 'white',
+        padding: '10px 12px',
+        borderRadius: '8px',
+        fontSize: '16px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        transition: 'border-color 0.2s ease',
+      },
+      optionContainer: {
+        borderRadius: '8px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        marginTop: '8px',
+        zIndex: 999,
+        backgroundColor: '#f9f9f9',
+        maxHeight: '200px',
+        overflowY: 'auto',
+      },
+      option: {
+        padding: '10px',
+        fontSize: '14px',
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        color: '#333',
+      },
+      selectedList: {
+        padding: '4px 10px',
+        backgroundColor: '#007bff',
+        borderRadius: '8px',
+        marginRight: '8px',
+        fontSize: '14px',
+        display: 'inline-block',
+        marginBottom: '4px',
+        color: '#fff',
+      },
+      chip: {
+        backgroundColor: '#007bff',
+        fontSize: '14px',
+        color: '#fff',
+        padding: '6px 12px',
+        borderRadius: '16px',
+        margin: '2px',
+      },
+    }}
+  />
+</FormControl>
+
                   <FormControl>
                     <FormLabel htmlFor="tags" color="gray.400">
                       Business Need Benefits details calculation (Tangible and
                       intangible benefits)
                     </FormLabel>
                     <Textarea
-                      id="issueDescription"
-                      value={issueData.issueDescription}
+                      id="businessNeedBenefitsDetails"
+                      value={issueData.businessNeedBenefitsDetails}
                       onChange={(e) =>
                         setIssueData({
                           ...issueData,
-                          issueDescription: e.target.value,
+                          businessNeedBenefitsDetails: e.target.value,
                         })
                       }
                       borderColor={borderColor}
@@ -605,7 +619,7 @@ console.log("IssueData",issueData.project)
                 </SimpleGrid>
               </>
             )}
-          {issueData.project === 'IT' && issueData.issueType === 'Bug' && (
+          {issueData.projectName === 'ABHI Change Request Management' && issueData.issueType === 'Bug' && (
             <>
               <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
                 {/* Issue Type */}
@@ -614,10 +628,10 @@ console.log("IssueData",issueData.project)
                     Workstream and BusinessFunction
                   </FormLabel>
                   <Select
-                    id="workstream"
-                    value={itbugData.workstream}
+                    id="workstreamStreamAndBusinessFunction"
+                    value={issueData.workstreamStreamAndBusinessFunction}
                     onChange={(e) =>
-                      setITBugData({ ...itbugData, workstream: e.target.value })
+                      setIssueData({ ...issueData, workstreamStreamAndBusinessFunction: e.target.value })
                     }
                     borderColor={borderColor}
                     _hover={{ borderColor: 'brandScheme.400' }}
@@ -644,9 +658,9 @@ console.log("IssueData",issueData.project)
                   </FormLabel>
                   <Select
                     id="defectType"
-                    value={itbugData.defectType}
+                    value={issueData.defectType}
                     onChange={(e) =>
-                      setITBugData({ ...itbugData, defectType: e.target.value })
+                      setIssueData({ ...issueData, defectType: e.target.value })
                     }
                     borderColor={borderColor}
                     _hover={{ borderColor: 'brandScheme.400' }}
@@ -671,10 +685,10 @@ console.log("IssueData",issueData.project)
                   </FormLabel>
                   <Select
                     id="primaryApplication"
-                    value={itbugData.primaryApplication}
+                    value={issueData.primaryApplication}
                     onChange={(e) =>
-                      setITBugData({
-                        ...itbugData,
+                      setIssueData({
+                        ...issueData,
                         primaryApplication: e.target.value,
                       })
                     }
@@ -705,11 +719,11 @@ console.log("IssueData",issueData.project)
                   </FormLabel>
                   <Textarea
                     id="summary"
-                    value={itbugData.summary}
+                    value={issueData.summary}
                     onChange={(e) =>
-                      setITBugData({
-                        ...itbugData,
-                        itbugData: e.target.value,
+                      setIssueData({
+                        ...issueData,
+                        summary: e.target.value,
                       })
                     }
                     borderColor={borderColor}
@@ -727,12 +741,12 @@ console.log("IssueData",issueData.project)
                     Defect Description
                   </FormLabel>
                   <Textarea
-                    id="defectDesciption"
-                    value={itbugData.defectDesciption}
+                    id="description"
+                    value={issueData.description}
                     onChange={(e) =>
-                      setITBugData({
-                        ...itbugData,
-                        defectDesciption: e.target.value,
+                      setIssueData({
+                        ...issueData,
+                        description: e.target.value,
                       })
                     }
                     borderColor={borderColor}
@@ -746,73 +760,90 @@ console.log("IssueData",issueData.project)
                 </FormControl>
               </SimpleGrid>
               <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
-                <FormControl isRequired>
-                  <FormLabel htmlFor="linkedIssue" color="gray.400">
-                    Linked Issue
-                  </FormLabel>
-                  <Multiselect
-                    placeholder="Select an Option"
-                    options={[
-                      { value: 'IT-7886', label: 'IT-7886' },
-                      { value: 'claims', label: 'Claims' },
-                      { value: 'digital', label: 'Digital Health Assesment' },
-                    ]}
-                    displayValue="label"
-                    style={{
-                        control: {
-                          borderColor: borderColor,
-                          backgroundColor: 'white',
-                          padding: '10px 12px',
-                          borderRadius: '8px',
-                          fontSize: '16px',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                          transition: 'border-color 0.2s ease',
-                        },
-                        optionContainer: {
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                          marginTop: '8px',
-                          zIndex: 999,
-                          backgroundColor: '#f9f9f9',
-                          maxHeight: '200px', // Add max height to the dropdown container
-                          overflowY: 'auto', // Allow scrolling for overflow
-                        },
-                        option: {
-                          padding: '10px',
-                          fontSize: '14px',
-                          backgroundColor: 'white',
-                          borderRadius: '8px',
-                          color: '#333',
-                          '&:hover': {
-                            backgroundColor: '#007bff', // Hover color
-                            color: '#fff',
-                          },
-                          '&:active': {
-                            backgroundColor: '#0056b3', // Active color
-                            color: '#fff',
-                          },
-                        },
-                        selectedList: {
-                          padding: '4px 10px',
-                          backgroundColor: '#007bff',
-                          borderRadius: '8px',
-                          marginRight: '8px',
-                          fontSize: '14px',
-                          display: 'inline-block',
-                          marginBottom: '4px',
-                          color: '#fff',
-                        },
-                        chip: {
-                          backgroundColor: '#007bff',
-                          fontSize: '14px',
-                          color: '#fff',
-                          padding: '6px 12px',
-                          borderRadius: '16px',
-                          margin: '2px',
-                        },
-                      }}
-                  />
-                </FormControl>
+              <FormControl isRequired>
+  <FormLabel htmlFor="linkedIssue" color="gray.400">
+    Linked Issue
+  </FormLabel>
+  <Multiselect
+    placeholder="Select an Option"
+    options={[
+      { value: 'IT-7886', label: 'IT-7886' },
+      { value: 'claims', label: 'Claims' },
+      { value: 'digital', label: 'Digital Health Assessment' },
+    ]}
+    displayValue="label"
+    selectedValues={
+      issueData.linkedIssue
+        ? issueData.linkedIssue.split(',').map((val) => {
+            const option = [
+              { value: 'IT-7886', label: 'IT-7886' },
+              { value: 'claims', label: 'Claims' },
+              { value: 'digital', label: 'Digital Health Assessment' },
+            ].find((o) => o.value === val);
+            return option || { value: val, label: val };
+          })
+        : []
+    }
+    onSelect={(selectedList) =>
+      setIssueData({
+        ...issueData,
+        linkedIssue: selectedList.map((item) => item.value).join(','),
+      })
+    }
+    onRemove={(selectedList) =>
+      setIssueData({
+        ...issueData,
+        linkedIssue: selectedList.map((item) => item.value).join(','),
+      })
+    }
+    style={{
+      control: {
+        borderColor: borderColor,
+        backgroundColor: 'white',
+        padding: '10px 12px',
+        borderRadius: '8px',
+        fontSize: '16px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        transition: 'border-color 0.2s ease',
+      },
+      optionContainer: {
+        borderRadius: '8px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        marginTop: '8px',
+        zIndex: 999,
+        backgroundColor: '#f9f9f9',
+        maxHeight: '200px',
+        overflowY: 'auto',
+      },
+      option: {
+        padding: '10px',
+        fontSize: '14px',
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        color: '#333',
+      },
+      selectedList: {
+        padding: '4px 10px',
+        backgroundColor: '#007bff',
+        borderRadius: '8px',
+        marginRight: '8px',
+        fontSize: '14px',
+        display: 'inline-block',
+        marginBottom: '4px',
+        color: '#fff',
+      },
+      chip: {
+        backgroundColor: '#007bff',
+        fontSize: '14px',
+        color: '#fff',
+        padding: '6px 12px',
+        borderRadius: '16px',
+        margin: '2px',
+      },
+    }}
+  />
+</FormControl>
+
               </SimpleGrid>
               <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
               <FormControl isRequired>
@@ -841,9 +872,9 @@ console.log("IssueData",issueData.project)
                     </FormLabel>
                     <Select
                       id="severity"
-                      value={itbugData.severity}
+                      value={issueData.severity}
                       onChange={(e) =>
-                        setITBugData({ ...itbugData, severity: e.target.value })
+                        setIssueData({ ...issueData, severity: e.target.value })
                       }
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
@@ -863,9 +894,9 @@ console.log("IssueData",issueData.project)
                     </FormLabel>
                     <Select
                       id="environment"
-                      value={itbugData.environment}
+                      value={issueData.environment}
                       onChange={(e) =>
-                        setITBugData({ ...itbugData, environment: e.target.value })
+                        setIssueData({ ...issueData, environment: e.target.value })
                       }
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
@@ -878,15 +909,15 @@ console.log("IssueData",issueData.project)
                       <option value="UAT">UAT</option>
                     </Select>
                   </FormControl>
-                  <FormControl isRequired>
+                  {/* <FormControl isRequired>
                     <FormLabel htmlFor="severity" color="gray.400">
                     Severity
                     </FormLabel>
                     <Select
                       id="severity"
-                      value={itbugData.severity}
+                      value={issueData.severity}
                       onChange={(e) =>
-                        setITBugData({ ...itbugData, severity: e.target.value })
+                        setIssueData({ ...issueData, severity: e.target.value })
                       }
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
@@ -897,144 +928,187 @@ console.log("IssueData",issueData.project)
                       <option value="medium">Medium</option>
                       <option value="low">Low</option>
                     </Select>
-                  </FormControl>
+                  </FormControl> */}
                 </SimpleGrid>
                 <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
                   {/* Assignee */}
-                  <FormControl>
-                    <FormLabel htmlFor="assignee" color="gray.400">
-                      Impacted-System (Multi-select)
-                    </FormLabel>
-                    <Multiselect
-                      placeholder="Select an Option"
-                      options={[
-                        { value: 'active', label: 'Active Days' },
-                        { value: 'claims', label: 'Claims' },
-                        { value: 'digital', label: 'Digital Health Assesment' },
-                      ]}
-                      displayValue="label"
-                      style={{
-                        control: {
-                          borderColor: borderColor,
-                          backgroundColor: 'white',
-                          padding: '10px 12px',
-                          borderRadius: '8px',
-                          fontSize: '16px',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                          transition: 'border-color 0.2s ease',
-                        },
-                        optionContainer: {
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                          marginTop: '8px',
-                          zIndex: 999,
-                          backgroundColor: '#f9f9f9',
-                          maxHeight: '200px', // Add max height to the dropdown container
-                          overflowY: 'auto', // Allow scrolling for overflow
-                        },
-                        option: {
-                          padding: '10px',
-                          fontSize: '14px',
-                          backgroundColor: 'white',
-                          borderRadius: '8px',
-                          color: '#333',
-                          '&:hover': {
-                            backgroundColor: '#007bff', // Hover color
-                            color: '#fff',
-                          },
-                          '&:active': {
-                            backgroundColor: '#0056b3', // Active color
-                            color: '#fff',
-                          },
-                        },
-                        selectedList: {
-                          padding: '4px 10px',
-                          backgroundColor: '#007bff',
-                          borderRadius: '8px',
-                          marginRight: '8px',
-                          fontSize: '14px',
-                          display: 'inline-block',
-                          marginBottom: '4px',
-                          color: '#fff',
-                        },
-                        chip: {
-                          backgroundColor: '#007bff',
-                          fontSize: '14px',
-                          color: '#fff',
-                          padding: '6px 12px',
-                          borderRadius: '16px',
-                          margin: '2px',
-                        },
-                      }}
-                    />
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel htmlFor="assignee" color="gray.400">
-                      Module (Multi-select)
-                    </FormLabel>
-                    <Multiselect
-                      placeholder="Select an Option"
-                      options={[
-                        { value: 'active', label: 'Active Days' },
-                        { value: 'claims', label: 'Claims' },
-                        { value: 'digital', label: 'Digital Health Assesment' },
-                      ]}
-                      displayValue="label"
-                      style={{
-                        control: {
-                          borderColor: borderColor,
-                          backgroundColor: 'white',
-                          padding: '10px 12px',
-                          borderRadius: '8px',
-                          fontSize: '16px',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                          transition: 'border-color 0.2s ease',
-                        },
-                        optionContainer: {
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                          marginTop: '8px',
-                          zIndex: 999,
-                          backgroundColor: '#f9f9f9',
-                          maxHeight: '200px', // Add max height to the dropdown container
-                          overflowY: 'auto', // Allow scrolling for overflow
-                        },
-                        option: {
-                          padding: '10px',
-                          fontSize: '14px',
-                          backgroundColor: 'white',
-                          borderRadius: '8px',
-                          color: '#333',
-                          '&:hover': {
-                            backgroundColor: '#007bff', // Hover color
-                            color: '#fff',
-                          },
-                          '&:active': {
-                            backgroundColor: '#0056b3', // Active color
-                            color: '#fff',
-                          },
-                        },
-                        selectedList: {
-                          padding: '4px 10px',
-                          backgroundColor: '#007bff',
-                          borderRadius: '8px',
-                          marginRight: '8px',
-                          fontSize: '14px',
-                          display: 'inline-block',
-                          marginBottom: '4px',
-                          color: '#fff',
-                        },
-                        chip: {
-                          backgroundColor: '#007bff',
-                          fontSize: '14px',
-                          color: '#fff',
-                          padding: '6px 12px',
-                          borderRadius: '16px',
-                          margin: '2px',
-                        },
-                      }}
-                    />
-                  </FormControl>
+                  <FormControl isRequired>
+  <FormLabel htmlFor="impactedSystems" color="gray.400">
+    Impacted-System (Multi-select)
+  </FormLabel>
+  <Multiselect
+    placeholder="Select an Option"
+    options={[
+      { value: 'active', label: 'Active Days' },
+      { value: 'claims', label: 'Claims' },
+      { value: 'digital', label: 'Digital Health Assessment' },
+    ]}
+    displayValue="label"
+    selectedValues={
+      issueData.impactedSystems
+        ? issueData.impactedSystems.split(',').map((val) => {
+            const option = [
+              { value: 'active', label: 'Active Days' },
+              { value: 'claims', label: 'Claims' },
+              { value: 'digital', label: 'Digital Health Assessment' },
+            ].find((o) => o.value === val);
+            return option || { value: val, label: val };
+          })
+        : []
+    }
+    onSelect={(selectedList) =>
+      setIssueData({
+        ...issueData,
+        impactedSystems: selectedList.map((item) => item.value).join(','),
+      })
+    }
+    onRemove={(selectedList) =>
+      setIssueData({
+        ...issueData,
+        impactedSystems: selectedList.map((item) => item.value).join(','),
+      })
+    }
+    style={{
+      control: {
+        borderColor: borderColor,
+        backgroundColor: 'white',
+        padding: '10px 12px',
+        borderRadius: '8px',
+        fontSize: '16px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        transition: 'border-color 0.2s ease',
+      },
+      optionContainer: {
+        borderRadius: '8px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        marginTop: '8px',
+        zIndex: 999,
+        backgroundColor: '#f9f9f9',
+        maxHeight: '200px',
+        overflowY: 'auto',
+      },
+      option: {
+        padding: '10px',
+        fontSize: '14px',
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        color: '#333',
+        '&:hover': {
+          backgroundColor: '#007bff',
+          color: '#fff',
+        },
+        '&:active': {
+          backgroundColor: '#0056b3',
+          color: '#fff',
+        },
+      },
+      selectedList: {
+        padding: '4px 10px',
+        backgroundColor: '#007bff',
+        borderRadius: '8px',
+        marginRight: '8px',
+        fontSize: '14px',
+        display: 'inline-block',
+        marginBottom: '4px',
+        color: '#fff',
+      },
+      chip: {
+        backgroundColor: '#007bff',
+        fontSize: '14px',
+        color: '#fff',
+        padding: '6px 12px',
+        borderRadius: '16px',
+        margin: '2px',
+      },
+    }}
+  />
+</FormControl>
+
+<FormControl>
+  <FormLabel htmlFor="module" color="gray.400">
+    Module (Multi-select)
+  </FormLabel>
+  <Multiselect
+    placeholder="Select an Option"
+    options={[
+      { value: 'active', label: 'Active Days' },
+      { value: 'claims', label: 'Claims' },
+      { value: 'digital', label: 'Digital Health Assessment' },
+    ]}
+    displayValue="label"
+    selectedValues={
+      issueData.module
+        ? issueData.module.split(',').map((val) => ({
+            value: val,
+            label:
+              val === 'active'
+                ? 'Active Days'
+                : val === 'claims'
+                ? 'Claims'
+                : 'Digital Health Assessment',
+          }))
+        : []
+    }
+    onSelect={(selectedList) =>
+      setIssueData({
+        ...issueData,
+        module: selectedList.map((item) => item.value).join(','),
+      })
+    }
+    onRemove={(selectedList) =>
+      setIssueData({
+        ...issueData,
+        module: selectedList.map((item) => item.value).join(','),
+      })
+    }
+    style={{
+      control: {
+        borderColor: borderColor,
+        backgroundColor: 'white',
+        padding: '10px 12px',
+        borderRadius: '8px',
+        fontSize: '16px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        transition: 'border-color 0.2s ease',
+      },
+      optionContainer: {
+        borderRadius: '8px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        marginTop: '8px',
+        zIndex: 999,
+        backgroundColor: '#f9f9f9',
+        maxHeight: '200px',
+        overflowY: 'auto',
+      },
+      option: {
+        padding: '10px',
+        fontSize: '14px',
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        color: '#333',
+      },
+      selectedList: {
+        padding: '4px 10px',
+        backgroundColor: '#007bff',
+        borderRadius: '8px',
+        marginRight: '8px',
+        fontSize: '14px',
+        display: 'inline-block',
+        marginBottom: '4px',
+        color: '#fff',
+      },
+      chip: {
+        backgroundColor: '#007bff',
+        fontSize: '14px',
+        color: '#fff',
+        padding: '6px 12px',
+        borderRadius: '16px',
+        margin: '2px',
+      },
+    }}
+  />
+</FormControl>
+
                   </SimpleGrid>
                   <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
                   {/* Assignee */}
@@ -1046,7 +1120,7 @@ console.log("IssueData",issueData.project)
                       id="assignee"
                       value={issueData.assignee}
                       onChange={(e) =>
-                        setITBugData({ ...itbugData, assignee: e.target.value })
+                        setIssueData({ ...issueData, assignee: e.target.value })
                       }
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
@@ -1112,16 +1186,16 @@ console.log("IssueData",issueData.project)
                   <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
                   {/* Assignee */}
                   <FormControl isRequired>
-                    <FormLabel htmlFor="noofTestCases" color="gray.400">
+                    <FormLabel htmlFor="noOfTestCaseImpacted" color="gray.400">
                      Number of Test Cases impacted
                     </FormLabel>
                     <Textarea
-                      id="noofTestCases"
-                      value={issueData.noofTestCases}
+                      id="noOfTestCaseImpacted"
+                      value={issueData.noOfTestCaseImpacted}
                       onChange={(e) =>
                         setIssueData({
                           ...issueData,
-                          noofTestCases: e.target.value,
+                          noOfTestCaseImpacted: e.target.value,
                         })
                       }
                       borderColor={borderColor}

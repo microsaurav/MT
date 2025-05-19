@@ -164,8 +164,8 @@ export default function UserReports() {
 
       <SimpleGrid columns={{ base: 1, md: 1, xl: 2 }} gap='20px' mb='20px'>
         <ComplexTable
-          columnsData={columnsDataComplex}
-          tableData={tableDataComplex}
+          // columnsData={columnsDataComplex}
+          // tableData={tableDataComplex}
         />
         {/* <MiniCalendar h='70%' minW='50%' selectRange={false} /> */}
       </SimpleGrid>

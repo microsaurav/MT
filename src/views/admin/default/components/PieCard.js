@@ -1,24 +1,77 @@
 // Chakra imports
-import { Box, Flex, Text, Select, useColorModeValue } from "@chakra-ui/react";
+import { Box, Flex, Text, useColorModeValue } from "@chakra-ui/react";
 // Custom components
 import Card from "components/card/Card.js";
 import PieChart from "components/charts/PieChart";
-import { pieChartData, pieChartOptions } from "variables/charts";
-import { VSeparator } from "components/separator/Separator";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function Conversion(props) {
   const { ...rest } = props;
   const { colSpan } = props;
+
   // Chakra Color Mode
   const textColor = useColorModeValue("secondaryGray.900", "white");
-  const cardColor = useColorModeValue("white", "navy.700");
-  const cardShadow = useColorModeValue(
-    "0px 18px 40px rgba(112, 144, 176, 0.12)",
-    "unset"
-  );
+
+  // State for chart data
+  const [chartData, setChartData] = useState([]);
+  const [chartOptions, setChartOptions] = useState({
+    labels: [],
+    colors: [],
+    chart: { width: "50px" },
+    states: { hover: { filter: { type: "none" } } },
+    legend: { show: false },
+    dataLabels: { enabled: false },
+    hover: { mode: null },
+    plotOptions: {
+      donut: {
+        expandOnClick: false,
+        donut: { labels: { show: false } },
+      },
+    },
+    fill: { colors: [] },
+    tooltip: { enabled: true, theme: "dark" },
+  });
+
+  // Fetch data on component mount
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/issuecountBybusinessoutcome");
+        const apiData = response.data;
+
+        const labels = apiData.map(item => item.category);
+        const data = apiData.map(item => item.count);
+        console.log("API Data:", apiData);
+        console.log("Labels:", labels);
+        console.log("Data:", data);
+
+        const colorMap = {
+          "Revenue Generation": "#4318FF",
+          "Customer Experience": "#6AD2FF",
+          "Operation Efficiency": "#EFF4FB",
+          "Regulatory": "#FFC107",
+          "Cost reduction": "#FF5733", // Additional categories as needed
+        };
+
+        const colors = labels.map(label => colorMap[label] || "#CCCCCC");
+
+        setChartData(data);
+        setChartOptions(prev => ({
+          ...prev,
+          labels,
+          colors,
+          fill: { colors },
+        }));
+      } catch (error) {
+        console.error("Failed to fetch business outcome data", error);
+      }
+    };
+
+    fetchChartData();
+  }, []);
+
   return (
-    
     <Card p='20px' align='center' direction='column' w='100%' {...rest}>
       <Flex
         px={{ base: "0px", "2xl": "10px" }}
@@ -29,24 +82,28 @@ export default function Conversion(props) {
         <Text color={textColor} fontSize='md' fontWeight='600' mt='4px'>
           CR's Based on Business Outcome
         </Text>
-       
       </Flex>
 
       <Flex
-    w="100%"
-    h={{ base: "300px", md: "400px", xl: "500px" }}  // You can adjust the height as needed
-    justifyContent="center"
-    alignItems="center"
-  >
-    <PieChart
-      h="100%"
-      w="100%"
-      chartData={pieChartData}
-      chartOptions={pieChartOptions}
-    />
-  </Flex>
-      
-    </Card>
+        w="100%"
+        h={{ base: "300px", md: "400px", xl: "500px" }}
+        justifyContent="center"
+        alignItems="center"
+      >
+        {chartData.length > 0 && chartData.reduce((sum, val) => sum + val, 0) > 0 ? (
+          <PieChart
+            h="100%"
+            w="100%"
+            chartData={chartData}
+            chartOptions={chartOptions}
+          />
+        ) : (
+          <Text color="gray.500" fontSize="sm">
+            No data available to render chart.
+          </Text>
+        )}
+      </Flex>
 
+    </Card>
   );
 }

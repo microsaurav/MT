@@ -32,7 +32,7 @@ export default function Overview() {
           gridArea="1 / 1 / 2 / 2"
           banner={banner}
           avatar={avatar}
-          name="Saurav Kumar"
+          name="Akshita Gupta"
           job="Software Developer"
           prod="17"
           uat="9"
