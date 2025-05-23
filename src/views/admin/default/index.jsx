@@ -29,6 +29,9 @@ import DailyTraffic from "views/admin/default/components/DailyTraffic";
 import PieCard from "views/admin/default/components/PieCard";
 import PieCardWorkstream from "views/admin/default/components/PieCardWorkstream";
 import { AiOutlineFileDone } from "react-icons/ai";
+import { useState,useEffect
+ } from "react";
+ import axios from "axios";
 import Tasks from "views/admin/default/components/Tasks";
 import TotalSpent from "views/admin/default/components/TotalSpent";
 import ProdDefects from "views/admin/default/components/ProdDefects";
@@ -39,108 +42,63 @@ import {
 } from "views/admin/default/variables/columnsData";
 import tableDataCheck from "views/admin/default/variables/tableDataCheck.json";
 import tableDataComplex from "views/admin/default/variables/tableDataComplex.json";
+import { useNavigate } from "react-router-dom";
 
 export default function UserReports() {
   // Chakra Color Mode
   const brandColor = useColorModeValue("brand.500", "white");
   const boxBg = useColorModeValue("secondaryGray.300", "whiteAlpha.100");
+  const [stats, setStats] = useState([]);
+  const navigate = useNavigate();
+  useEffect(() => {
+    // Fetch data from API
+    axios
+      .get('http://localhost:8080/api/issuecountbystatus')
+      .then((response) => {
+        setStats(response.data);
+      })
+      .catch((error) => {
+        console.error('Error fetching data:', error);
+      });
+  }, []);
+  const iconMap = {
+    'Open': MdBarChart,
+    'CR Approved': MdAddTask,
+    'Development in Progress': GrInProgress,
+    'QA Testing': AiOutlineFileDone,
+    'TSD Creation': MdFileCopy,
+    'UAT': MdDeveloperMode,
+  };
+
   return (
     <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
-      <SimpleGrid
-        columns={{ base: 1, md: 2, lg: 3, "2xl": 6 }}
-        gap='20px'
-        mb='20px'>
-        <MiniStatistics
-          startContent={
-            <IconBox
-              w='56px'
-              h='56px'
-              bg={boxBg}
-              icon={
-                <Icon w='32px' h='32px' as={GrInProgress} color={brandColor} />
+     <SimpleGrid columns={{ base: 1, md: 2, lg: 3, '2xl': 6 }} gap="20px" mb="20px">
+        {stats.map((item, index) => {
+          const IconComponent = iconMap[item.category] || MdBarChart; // Default to MdBarChart if category not found
+          const handleClick = () => {
+            // Navigate to /admin/search with query param
+            navigate(`/admin/search?status=${encodeURIComponent(item.category)}`);
+          };
+          return (
+            <Box key={index} cursor="pointer" onClick={handleClick}>
+<MiniStatistics
+            // onClick={handleClick}
+              key={index}
+              startContent={
+                <IconBox
+                  w="56px"
+                  h="56px"
+                  bg={boxBg}
+                  icon={<Icon w="32px" h="32px" as={IconComponent} color={brandColor} />}
+                />
               }
+              name={item.category}
+              value={item.count.toString()}
             />
-          }
-          name='In Progress'
-          value='3'
-        />
-        <MiniStatistics
-          startContent={
-            <IconBox
-              w='56px'
-              h='56px'
-              bg={boxBg}
-              icon={
-                <Icon w='32px' h='32px' as={MdBarChart} color={brandColor} />
-              }
-            />
-          }
-          name='Open'
-          value='642'
-        />
-         <MiniStatistics
-         
-            // <Flex me='-16px' mt='10px'>
-            //   <FormLabel htmlFor='balance'>
-            //     <Avatar src={MdDeveloperMode} />
-            //   </FormLabel>
-              
-            // </Flex>
-            startContent={
-              <IconBox
-                w='56px'
-                h='56px'
-                bg={boxBg}
-                icon={
-                  <Icon w='32px' h='32px' as={MdDeveloperMode} color={brandColor} />
-                }
-              />
-            }
-          
-          name='Under Development'
-          value='10'
-        />
-        <MiniStatistics
-         startContent={
-          <IconBox
-            w='56px'
-            h='56px'
-            bg={boxBg}
-            icon={
-              <Icon w='32px' h='32px' as={AiOutlineFileDone} color={brandColor} />
-            }
-          />
-        }
+            </Box>
             
-          name='Development Completed'
-          value='10'
-        />
-        <MiniStatistics
-          startContent={
-            <IconBox
-              w='56px'
-              h='56px'
-              bg='linear-gradient(90deg, #4481EB 0%, #04BEFE 100%)'
-              icon={<Icon w='28px' h='28px' as={MdAddTask} color='white' />}
-            />
-          }
-          name='Dev Completed'
-          value='150'
-        />
-        <MiniStatistics
-          startContent={
-            <IconBox
-              w='56px'
-              h='56px'
-              bg={boxBg}
-              icon={
-                <Icon w='32px' h='32px' as={MdFileCopy} color={brandColor} />
-              }
-            />
-          }
-          name='Effort Estimation'
-          value='29'
-        />
+          );
+        })}
       </SimpleGrid>
     <SimpleGrid 
   columns={{ base: 1, md: 1, xl: 2 }} 

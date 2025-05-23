@@ -5,6 +5,7 @@ import {
   MdPerson,
   MdHome,
   MdAdd,
+  MdSearch,
 } from 'react-icons/md';
 import { GoTasklist } from "react-icons/go";
 
@@ -16,6 +17,7 @@ import Profile from 'views/admin/profile';
 import CreateIssuePage from "views/admin/CreateIssuePage";
 import Yourwork from "views/admin/your-work";
 import JiraLikeWorkflow from "views/admin/JiraWorkflow";
+import IssueSearchPage from "views/admin/IssueSearchPage";
 // const Open = () => {
 //   const [isModalOpen, setIsModalOpen] = useState(false);
 //   const handleCreateIssueClick = () => {
@@ -38,33 +40,43 @@ const routes = [
     component: <MainDashboard />,
   },
   {
+    name: 'Search',
+    layout: '/admin',
+    path: '/search',
+    icon: <Icon as={MdSearch} width="20px" height="20px" color="inherit" />,
+    component: <IssueSearchPage />,
+  },
+  {
     name: 'Create',
     layout: '/admin',
     path: '/create',
     icon: <Icon as={MdAdd} width="20px" height="20px" color="inherit" />,
     component: <CreateIssuePage />
   },
+ 
+  // {
+  //   name: 'Defects Dashboard',
+  //   layout: '/admin',
+  //   path: '/data-tables',
+  //   icon: <Icon as={MdBarChart} width="20px" height="20px" color="inherit" />,
+  //   component: <DataTables />,
+  // },
   {
-    name: 'Defects Dashboard',
-    layout: '/admin',
-    path: '/data-tables',
-    icon: <Icon as={MdBarChart} width="20px" height="20px" color="inherit" />,
-    component: <DataTables />,
-  },
-  {
-    name: 'Profile',
+    name: 'Your Work',
     layout: '/admin',
     path: '/profile',
     icon: <Icon as={MdPerson} width="20px" height="20px" color="inherit" />,
     component: <Profile />,
   },
   {
-    name: 'Your Work',
+    name: 'View Issue',
     layout: '/admin',
-    path: '/your-work',
+    path: '/view/:id',
     icon: <Icon as={GoTasklist} width="20px" height="20px" color="inherit" />,
     component: <Yourwork />,
+    showInSidebar: false,  // Hide from sidebar
   },
+  
   // {
   //   name: 'Jira Workflow',
   //   layout: '/admin',

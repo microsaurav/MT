@@ -7,6 +7,8 @@ import Navbar from 'components/Navbar ABHI/Navbar'; // Your Navbar component
 import AdminLayout from './layouts/admin'; // Import your AdminLayout
 import AuthLayout from './layouts/auth'; // Auth layout if needed
 import RTLLayout from './layouts/rtl'; // RTL layout if needed
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Main() {
   const [currentTheme, setCurrentTheme] = useState(initialTheme);
@@ -14,6 +16,11 @@ function Main() {
   return (
     <ChakraProvider theme={currentTheme}>
       <Navbar />
+      <ToastContainer
+        position="bottom-left"
+        autoClose={5000}
+        hideProgressBar={false}
+      />
       <Routes>
         <Route path="auth/*" element={<AuthLayout />} />
         <Route

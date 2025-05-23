@@ -41,7 +41,9 @@ import 'react-quill/dist/quill.snow.css';
 import Popup from '../WorkflowPopupp';
 import SubtaskPopup from '../SubtaskPopup';
 import { LuFolder, LuSquareCheck, LuUser } from "react-icons/lu"
-
+import axios from 'axios';
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 
 export default function Overview() {
 
@@ -192,7 +194,7 @@ const handleChangeAccordian = (e) => {
 
 const [isOpen1, setIsOpen1] = useState(false);
   const [isOpen2, setIsOpen2] = useState(false);
-  
+  let {id} = useParams();
 
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -268,7 +270,52 @@ const [isOpen1, setIsOpen1] = useState(false);
       marginBottom: '10px',
     },
   };
-
+  const [editableFields, setEditableFields] = useState({});
+  const [issueData,setIssueData] = useState("");
+  useEffect(() => {
+    axios
+      .get(`http://localhost:8080/api/GetIssuedetailsbyissueid/${id}`)
+      .then((response) => {
+        setIssueData(response.data);
+  
+        // Initialize editable fields once API call is successful
+        const initialFields = {
+          "Description": response.data.description || "NA",
+          "In Scope": response.data.inScope || "NA",
+          "Out Scope": response.data.outScope || "NA",
+          "Business Need Benefits Details": response.data.businessNeedBenefitsDetails || "NA",
+          "Learnings": "" // Default since API doesn't return it
+        };
+        setEditableFields(initialFields);
+      })
+      .catch((error) => {
+        console.error("Error fetching issue details:", error);
+      });
+  }, [id]);
+  const [accordionFields, setAccordionFields] = useState({
+    assignee: "",
+    reporter: "",
+    priority: "",
+    primaryBA: ""
+  });
+  const handleAccordionChange = (e, field) => {
+    setAccordionFields(prev => ({
+      ...prev,
+      [field]: e.target.value
+    }));
+  };
+  // Populate from API once it's loaded
+  useEffect(() => {
+    if (issueData) {
+      setAccordionFields({
+        assignee: issueData.assignee || "",
+        reporter: issueData.reporter || "",
+        priority: issueData.priority || "",
+        primaryBA: issueData.primaryBA || ""
+      });
+    }
+  }, [issueData]);
+  
   return (
     <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
       <Card flexDirection="column" w="100%" px="25px" mb="20px" overflow="hidden">
@@ -279,9 +326,9 @@ const [isOpen1, setIsOpen1] = useState(false);
           {/* Left Section (70%) */}
           <div style={{ flex: 6 }}>
             <div>
-              <div style={{ fontSize: "22px", fontWeight: 500, marginTop: "10px" }}>
-                Activ One Renewals
-              </div>
+            <div style={{ fontSize: "22px", fontWeight: 500, marginTop: "10px" }}>
+  {issueData ? issueData.summary : "Loading summary..."}
+</div>
               <div>
                 <Menu>
                   <MenuButton as={Button} variant="outline" size="sm">
@@ -302,19 +349,26 @@ const [isOpen1, setIsOpen1] = useState(false);
 
               {/* Editable Sections */}
               <div style={{ margin: "5px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                {["Description", "In Scope", "Out Scope", "Business Need Benefits Details", "Learnings"].map(
-                  (label, index) => (
-                    <div key={index} style={{ margin: "5px" }}>
-                      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
-                      <div>
-                        <Editable textAlign="start" defaultValue={label === "Out Scope" ? "NA" : "Some default text"}>
-                          <EditablePreview />
-                          <EditableInput />
-                        </Editable>
-                      </div>
-                    </div>
-                  )
-                )}
+              {["Description", "In Scope", "Out Scope", "Business Need Benefits Details"].map((label, index) => (
+  <div key={index} style={{ margin: "5px" }}>
+    <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
+    <div>
+      <Editable
+        textAlign="start"
+        value={editableFields[label] || ""}
+        onChange={(val) =>
+          setEditableFields((prev) => ({
+            ...prev,
+            [label]: val,
+          }))
+        }
+      >
+        <EditablePreview />
+        <EditableInput />
+      </Editable>
+    </div>
+  </div>
+))}
 
                 <div style={{ margin: "5px" }}>
                   <label style={{ fontSize: "18px", fontWeight: 500 }}>Attachments</label>
@@ -362,7 +416,7 @@ const [isOpen1, setIsOpen1] = useState(false);
                     {rows.map((row, index) => (
                       <div key={index} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "5px" }}>
                         
-                        {/* Select Dropdown */}
+                       
                         <Select
                           value={row.selectValue}
                           onChange={(e) => handleSelectChange(e, index)}
@@ -374,7 +428,7 @@ const [isOpen1, setIsOpen1] = useState(false);
                           <option value="Option4">Sub-Task</option>
                         </Select>
 
-                        {/* Editable Input */}
+                        
                         <Editable
                           defaultValue={row.value}
                           onChange={(val) => handleChange(val, index)}
@@ -609,7 +663,7 @@ const [isOpen1, setIsOpen1] = useState(false);
               <div  style={{display:'flex' , flexDirection:'column' , gap:'10px'}}>
                 <div style={{display:'flex' , flexDirection:'row' , justifyContent:'space-between', alignItems:'center'}}>
                 <label>Assignee</label>
-                <Select value={selectedOption} onChange={handleChangeAccordian} width="200px">
+                <Select value={accordionFields.assignee} onChange={(e) => handleAccordionChange(e, "assignee")} width="200px">
                   <option value="Option1">Saurav Kumar</option>
                   <option value="Option2">Om Thange</option>
                   <option value="Option3">Prathamesh Kokane</option>
@@ -618,71 +672,20 @@ const [isOpen1, setIsOpen1] = useState(false);
 
               <div style={{display:'flex' , flexDirection:'row' , justifyContent:'space-between', alignItems:'center'}}>
                 <label>Reporter</label>
-                <Select value={selectedOption} onChange={handleChangeAccordian} width="200px">
-                  <option value="Option2">Saurav Kumar</option>
-                  <option value="Option1">Om Thange</option>
+                <Select value={accordionFields.reporter} onChange={(e) => handleAccordionChange(e, "reporter")} width="200px">
+                  <option value="saurav.kumar10">Saurav Kumar</option>
+                  <option value="HI448213">Om Thange</option>
                 </Select>
               </div>
 
-              <div style={{display:'flex' , flexDirection:'row' , justifyContent:'space-between', alignItems:'center'}}>
-                <label>Developement</label>
-
-                <div style={{ display: "flex", flexDirection:'column', gap: "5px" }}>
-                  {/* First Popover */}
-                  <Popover isOpen={isOpen1} onClose={() => setIsOpen1(false)}>
-                    <PopoverTrigger>
-                      <Button onClick={() => setIsOpen1(true)} size="sm"
-                            variant="outline" colorScheme={"blue"}
-                            borderRadius="4px"
-                            ml={2}>
-                        Create Branch
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent>
-                      <PopoverArrow />
-                      <PopoverCloseButton />
-                      <PopoverBody>
-                      <div style={{display:'flex' , flexDirection:'column' , gap:'10px'}}>
-                      <label style={{ fontSize: "16px", fontWeight: 500 }}>Git Create & Checkout A New Branch</label>
-                      <Input value="git checkout -b IT-13628"/>
-                      </div>
-                      
-                      </PopoverBody>
-                    </PopoverContent>
-                  </Popover>
-
-                  {/* Second Popover */}
-                  <Popover isOpen={isOpen2} onClose={() => setIsOpen2(false)}>
-                    <PopoverTrigger>
-                      <Button onClick={() => setIsOpen2(true)} size="sm"
-                            variant="outline" colorScheme={"blue"}
-                            borderRadius="4px"
-                            ml={2} >
-                        Create Commit
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent>
-                      <PopoverArrow />
-                      <PopoverCloseButton />
-                      <PopoverBody>
-                        <div style={{display:'flex' , flexDirection:'column' , gap:'10px'}}>
-                        <label style={{ fontSize: "16px", fontWeight: 500 }}>Link commit to Jira Issues</label>
-                        <Input  value="IT-98230"/>
-                        <Input  value="IT-98230"/>
-                        </div>
-                      </PopoverBody>
-                    </PopoverContent>
-                  </Popover>
-                </div>              
-              </div>
+              
 
               <div style={{display:'flex' , flexDirection:'row' , justifyContent:'space-between', alignItems:'center'}}>
                 <label>Priority</label>
-                <Select value={selectedOption} onChange={handleChangeAccordian} width="200px">
-                  <option value="Option4">Rush order / Regulatory</option>
-                  <option value="Option3">Low</option>
-                  <option value="Option2">Medium</option>
-                  <option value="Option1">High</option>
+                <Select value={accordionFields.priority} onChange={(e) => handleAccordionChange(e, "priority")} width="200px">
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
                 </Select>
               </div>
 
@@ -693,10 +696,9 @@ const [isOpen1, setIsOpen1] = useState(false);
 
               <div style={{display:'flex' , flexDirection:'row' , justifyContent:'space-between', alignItems:'center'}}>
                 <label>Primary BA</label>
-                <Select value={selectedOption} onChange={handleChangeAccordian} width="200px">
-                  <option value="Option3">Puneet Sharma</option>
-                  <option value="Option2">Atul Sawant</option>
-                  <option value="Option1">Mahesh nair</option>
+                <Select value={accordionFields.primaryBA} onChange={(e) => handleAccordionChange(e, "primaryBA")} width="200px">
+                  <option value="Prachi Darade">Prachi Darade</option>
+                  <option value="Mahesh nair">Mahesh nair</option>
                 </Select>
               </div>
               </div>

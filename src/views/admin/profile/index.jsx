@@ -1,5 +1,5 @@
 // Chakra imports
-import { Box, Grid } from "@chakra-ui/react";
+import { Box, Grid, Center, Text } from "@chakra-ui/react";
 
 // Custom components
 import Banner from "views/admin/profile/components/Banner";
@@ -7,14 +7,37 @@ import General from "views/admin/profile/components/General";
 import Defect from "views/admin/profile/components/Defect";
 import Notifications from "views/admin/profile/components/Notifications";
 import Projects from "views/admin/profile/components/Projects";
-
+import { useEffect, useState } from "react";
+import axios from "axios";
 // Assets
 import banner from "assets/img/auth/banner.png";
 import avatar from "assets/img/avatars/avatar4.png";
 import React from "react";
 
 export default function Overview() {
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:8080/api/issuecountbyUser/akshita.gupta2")
+      .then((res) => {
+        setUserData(res.data[0]); // assuming response is always an array with one object
+      })
+      .catch((err) => {
+        console.error("Failed to fetch user data:", err);
+      });
+  }, []);
+  if (!userData) {
+    return (
+      <Center h="200px">
+        <Text fontSize="lg" color="gray.500">
+          User not found.
+        </Text>
+      </Center>
+    );
+  }
   return (
+
     <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
       {/* Main Fields */}
       <Grid
@@ -32,11 +55,10 @@ export default function Overview() {
           gridArea="1 / 1 / 2 / 2"
           banner={banner}
           avatar={avatar}
-          name="Akshita Gupta"
-          job="Software Developer"
-          prod="17"
-          uat="9"
-          up="2"
+          name={userData.username || "User"}
+          // job="Software Developer"
+          bugCount={userData.bugCount}
+          crCount={userData.crCount}
         />
         <Defect
           gridArea={{ base: "2 / 1 / 3 / 3", lg: "1 / 2 / 2 / 4" }}
@@ -45,7 +67,7 @@ export default function Overview() {
           pb={{ base: "100px", lg: "20px" }}
         />
       </Grid>
-  
+
       {/* Second Grid for Projects */}
       <Grid
         mb="20px"
@@ -67,7 +89,7 @@ export default function Overview() {
       </Grid>
     </Box>
   );
-  
+
 }
 {/* <General
           gridArea={{ base: "2 / 1 / 3 / 2", lg: "1 / 2 / 2 / 3" }}

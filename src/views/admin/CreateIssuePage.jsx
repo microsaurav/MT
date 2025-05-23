@@ -15,9 +15,11 @@ import {
  
 } from '@chakra-ui/react';
 import Multiselect from 'multiselect-react-dropdown';
-
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import the default styles
 import { MdCheckCircle} from 'react-icons/md';
 import Card from 'components/card/Card'; // Your custom Card component
+import { useNavigate } from 'react-router-dom';
 
 export default function CreateIssueModal() {
   const [issueData, setIssueData] = useState({
@@ -56,9 +58,10 @@ export default function CreateIssueModal() {
   });
   
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const bgColor = useColorModeValue("gray.50", "gray.800");
   const textColor = useColorModeValue('secondaryGray.900', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
-  
+  const navigate = useNavigate();
   // Handling form submission
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -72,13 +75,14 @@ export default function CreateIssueModal() {
   
       if (response.ok) {
         const result = await response.json();
-        alert('Form submitted successfully!');
+        toast.success(`Issue Created Successfully with ID: ${result.issueId}`);
+        navigate('/admin/default')
         console.log(result);
       } else {
-        console.error('Submission error:', await response.text());
+        toast.error('Submission error');
       }
     } catch (error) {
-      console.error('Network error:', error);
+      toast.error('Network error:', error);
     }
   };
   
@@ -104,6 +108,7 @@ export default function CreateIssueModal() {
 console.log("IssueData",issueData.project)
   return (
     <Box pt={{ base: '130px', md: '80px', xl: '80px' }}>
+      
       <Card
         flexDirection="column"
         w="100%"
@@ -112,71 +117,63 @@ console.log("IssueData",issueData.project)
         overflow="hidden"
       >
         <Box>
-          <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
-            <FormControl isRequired>
-              <FormLabel htmlFor="project" color="gray.400">
-                Project
-              </FormLabel>
-              <Select
-                id="projectName"
-                value={issueData.projectName}
-                onChange={(e) =>
-                  setIssueData({ ...issueData, projectName: e.target.value })
-                }
-                borderColor={borderColor}
-                _hover={{ borderColor: 'brandScheme.400' }}
-                _focus={{ borderColor: 'brandScheme.400' }}
-                backgroundColor="white"
-              >
-                <option value="" selected disabled>
-                  Select an Option
-                </option>
-                <option value="ABHI Change Request Management">ABHI Change Request Management</option>
-                {/* <option value="Prodcution">
-                  ABHI Products Defect Management
-                </option> */}
-              </Select>
-            </FormControl>
+        <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+      <FormControl isRequired>
+        <FormLabel htmlFor="project" color="gray.400">
+          Project
+        </FormLabel>
+        <Select
+          id="projectName"
+          value={issueData.projectName}
+          onChange={(e) =>
+            setIssueData({ ...issueData, projectName: e.target.value })
+          }
+          borderColor={borderColor}
+          textColor={textColor}
+          _hover={{ borderColor: 'brandScheme.400' }}
+          _focus={{ borderColor: 'brandScheme.400' }}
+          backgroundColor={bgColor}
+        >
+          <option value="" disabled>
+            Select an Option
+          </option>
+          <option value="ABHI Change Request Management">
+            ABHI Change Request Management
+          </option>
+          {/* <option value="Prodcution">ABHI Products Defect Management</option> */}
+        </Select>
+      </FormControl>
 
-           
-                <FormControl isRequired>
-              <FormLabel htmlFor="severity" color="gray.400">
-                Issue Type
-              </FormLabel>
-             
-                
-              <Select
-                id="issueType"
-                value={issueData.issueType}
-                onChange={(e) =>
-                  setIssueData({ ...issueData, issueType: e.target.value })
-                }
-                borderColor={borderColor}
-                _hover={{ borderColor: 'brandScheme.400' }}
-                _focus={{ borderColor: 'brandScheme.400' }}
-                backgroundColor="white"
-              >
-                
-                <option value="" disabled selected>
-                  Select an option
-                </option>
-                <option value="CR">Change Request</option>
-                <option value="Bug">Bug</option>
-                <option value="Project">Project</option>
-                <option value="BAU">BAU Projects</option>
-                    
-            
-           
-              </Select>
-             
-            </FormControl>
-           
-            
-          </SimpleGrid>
+      <FormControl isRequired>
+        <FormLabel htmlFor="severity" color="gray.400">
+          Issue Type
+        </FormLabel>
+        <Select
+          id="issueType"
+          value={issueData.issueType}
+          onChange={(e) =>
+            setIssueData({ ...issueData, issueType: e.target.value })
+          }
+          borderColor={borderColor}
+          _hover={{ borderColor: 'brandScheme.400' }}
+          _focus={{ borderColor: 'brandScheme.400' }}
+          backgroundColor={bgColor}
+        >
+          <option value="" disabled>
+            Select an option
+          </option>
+          <option value="CR">Change Request</option>
+          <option value="Bug">Bug</option>
+          <option value="Project">Project</option>
+          <option value="BAU">BAU Projects</option>
+          <option value="Service Request">Service Request</option>
+        </Select>
+      </FormControl>
+    </SimpleGrid>
           {issueData.projectName === 'ABHI Change Request Management' &&
             (issueData.issueType === 'CR' ||
               issueData.issueType === 'Project' ||
-              issueData.issueType === 'BAU') && (
+              issueData.issueType === 'BAU'||issueData.issueType === 'Service Request' ) && (
               <>
                 <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
                   {/* Issue Type */}
@@ -196,7 +193,7 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                       resize="none"
                       minHeight="20px"
                     />
@@ -215,19 +212,20 @@ console.log("IssueData",issueData.project)
                         setIssueData({ ...issueData, businessOwner: e.target.value })
                       }
                       borderColor={borderColor}
+                      backgroundColor={bgColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      
                     >
-                      <option value="claims">Claims</option>
-                      <option value="contact">Contact Center</option>
-                      <option value="digital">Digital</option>
+                      <option value="Claims">Claims</option>
+                      <option value="Contact Center">Contact Center</option>
+                      <option value="Digital">Digital</option>
                       <option value="DOPs">DOPs</option>
-                      <option value="embedded">Embedded Wellness</option>
-                      <option value="finance">Finance</option>
-                      <option value="finOps">FinOps</option>
-                      <option value="fwa">FWA</option>
-                      <option value="group">Group Operation</option>
+                      <option value="Embedded Wellness">Embedded Wellness</option>
+                      <option value="Finance">Finance</option>
+                      <option value="FinOps">FinOps</option>
+                      <option value="FWA">FWA</option>
+                      <option value="Group Operation">Group Operation</option>
                     </Select>
                   </FormControl>
                 </SimpleGrid>
@@ -247,9 +245,10 @@ console.log("IssueData",issueData.project)
                         })
                       }
                       borderColor={borderColor}
+
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                     backgroundColor={bgColor}
                       resize="none"
                       minHeight="20px"
                     />
@@ -272,7 +271,7 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                       placeholder="Describe the issue in detail..."
                       resize="none"
                       minHeight="150px"
@@ -300,7 +299,7 @@ console.log("IssueData",issueData.project)
                         borderColor={borderColor}
                         _hover={{ borderColor: 'brandScheme.400' }}
                         _focus={{ borderColor: 'brandScheme.400' }}
-                        backgroundColor="white"
+                        backgroundColor={bgColor}
                         resize="none"
                         minHeight="90px"
                       />
@@ -327,7 +326,7 @@ console.log("IssueData",issueData.project)
                         borderColor={borderColor}
                         _hover={{ borderColor: 'brandScheme.400' }}
                         _focus={{ borderColor: 'brandScheme.400' }}
-                        backgroundColor="white"
+                        backgroundColor={bgColor}
                         resize="none"
                         minHeight="90px"
                       />
@@ -347,11 +346,11 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                     >
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
                     </Select>
                   </FormControl>
                 </SimpleGrid>
@@ -370,7 +369,7 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                     />
                   </FormControl>
                   <FormControl>
@@ -386,18 +385,18 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                     >
                       <option value="" disabled selected>
                         Select an option
                       </option>
-                      <option value="product">Product & Pricing</option>
-                      <option value="digital">Digital</option>
-                      <option value="operation">Operation</option>
-                      <option value="sales">Sales</option>
-                      <option value="marketing">Marketing</option>
-                      <option value="legal">Legal</option>
-                      <option value="finance">Finance</option>
+                      <option value="Product & Pricing">Product & Pricing</option>
+                      <option value="Digital">Digital</option>
+                      <option value="Operation">Operation</option>
+                      <option value="Sales">Sales</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="Legal">Legal</option>
+                      <option value="Finance">Finance</option>
                       <option value="IT">IT</option>
                     </Select>
                   </FormControl>
@@ -499,18 +498,18 @@ console.log("IssueData",issueData.project)
   <Multiselect
     placeholder="Select an Option"
     options={[
-      { value: 'audit', label: 'Audit Observation' },
-      { value: 'cost', label: 'Cost Reduction/Avoidence' },
-      { value: 'customer', label: 'Customer Experience' },
-      { value: 'customer On_boarding', label: 'Customer OnBoarding' },
-      { value: 'distributor', label: 'Distributor Experience' },
-      { value: 'employee', label: 'Employee Experience' },
-      { value: 'operation', label: 'Operation Efficiency' },
-      { value: 'partner', label: 'Partner On-Boarding' },
-      { value: 'regulatory', label: 'Regulatory' },
-      { value: 'revenue', label: 'Revenue Generation' },
-      { value: 'risk management', label: 'Risk Management' },
-      { value: 'tech', label: 'Tech Scalability' },
+      { value: 'Audit Observation', label: 'Audit Observation' },
+      { value: 'Cost Reduction/Avoidence', label: 'Cost Reduction/Avoidence' },
+      { value: 'Customer Experience', label: 'Customer Experience' },
+      { value: 'Customer OnBoarding', label: 'Customer OnBoarding' },
+      { value: 'Distributor Experience', label: 'Distributor Experience' },
+      { value: 'Employee Experience', label: 'Employee Experience' },
+      { value: 'Operation Efficiency', label: 'Operation Efficiency' },
+      { value: 'Partner On-Boarding', label: 'Partner On-Boarding' },
+      { value: 'Regulatory', label: 'Regulatory' },
+      { value: 'Revenue Generation', label: 'Revenue Generation' },
+      { value: 'Risk Management', label: 'Risk Management' },
+      { value: 'Tech Scalability', label: 'Tech Scalability' },
     ]}
     displayValue="label"
     selectedValues={
@@ -611,7 +610,7 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                       resize="none"
                       minHeight="90px"
                     />
@@ -636,18 +635,18 @@ console.log("IssueData",issueData.project)
                     borderColor={borderColor}
                     _hover={{ borderColor: 'brandScheme.400' }}
                     _focus={{ borderColor: 'brandScheme.400' }}
-                    backgroundColor="white"
+                    backgroundColor={bgColor}
                   >
                     <option value="" disabled selected>
                       Select an option
                     </option>
-                    <option value="product">Product & Pricing</option>
-                    <option value="digital">Digital</option>
-                    <option value="operation">Operation</option>
-                    <option value="sales">Sales</option>
-                    <option value="marketing">Marketing</option>
-                    <option value="legal">Legal</option>
-                    <option value="finance">Finance</option>
+                    <option value="Product & Pricing">Product & Pricing</option>
+                    <option value="Digital">Digital</option>
+                    <option value="Operation">Operation</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Legal">Legal</option>
+                    <option value="Finance">Finance</option>
                     <option value="IT">IT</option>
                   </Select>
                 </FormControl>
@@ -665,15 +664,15 @@ console.log("IssueData",issueData.project)
                     borderColor={borderColor}
                     _hover={{ borderColor: 'brandScheme.400' }}
                     _focus={{ borderColor: 'brandScheme.400' }}
-                    backgroundColor="white"
+                    backgroundColor={bgColor}
                   >
                     <option value="" disabled selected>
                       Select an option
                     </option>
                     <option value="QA">QA Testing</option>
-                    <option value="sanity">Sanity Testing</option>
-                    <option value="regression">Regression</option>
-                    <option value="UAT">UAT Testing</option>
+                    <option value="Sanity Testing">Sanity Testing</option>
+                    <option value="Regression">Regression</option>
+                    <option value="UAT Testing">UAT Testing</option>
                   </Select>
                 </FormControl>
               </SimpleGrid>
@@ -695,20 +694,20 @@ console.log("IssueData",issueData.project)
                     borderColor={borderColor}
                     _hover={{ borderColor: 'brandScheme.400' }}
                     _focus={{ borderColor: 'brandScheme.400' }}
-                    backgroundColor="white"
+                    backgroundColor={bgColor}
                   >
                     <option value="" disabled selected>
                       Select an option
                     </option>
-                    <option value="aarambh">Aarambh</option>
-                    <option value="abhiConnect">ABHI Connect</option>
-                    <option value="abhiProviderPortal">
+                    <option value="Aarambh">Aarambh</option>
+                    <option value="ABHI Connect">ABHI Connect</option>
+                    <option value="ABHI ProviderPortal">
                       ABHI ProviderPortal
                     </option>
-                    <option value="abhiWebsite">ABHI Website</option>
-                    <option value="activHealth">Activ Health</option>
-                    <option value="legal">Legal</option>
-                    <option value="finance">Finance</option>
+                    <option value="ABHI Website">ABHI Website</option>
+                    <option value="Activ Health">Activ Health</option>
+                    <option value="Legal">Legal</option>
+                    <option value="Finance">Finance</option>
                     <option value="IT">IT</option>
                   </Select>
                 </FormControl>
@@ -729,7 +728,7 @@ console.log("IssueData",issueData.project)
                     borderColor={borderColor}
                     _hover={{ borderColor: 'brandScheme.400' }}
                     _focus={{ borderColor: 'brandScheme.400' }}
-                    backgroundColor="white"
+                    backgroundColor={bgColor}
                     resize="none"
                     minHeight="20px"
                   />
@@ -752,14 +751,14 @@ console.log("IssueData",issueData.project)
                     borderColor={borderColor}
                     _hover={{ borderColor: 'brandScheme.400' }}
                     _focus={{ borderColor: 'brandScheme.400' }}
-                    backgroundColor="white"
+                    backgroundColor={bgColor}
                     placeholder="Describe the defect in detail..."
                     resize="none"
                     minHeight="150px"
                   />
                 </FormControl>
               </SimpleGrid>
-              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+              {/* <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
               <FormControl isRequired>
   <FormLabel htmlFor="linkedIssue" color="gray.400">
     Linked Issue
@@ -844,7 +843,7 @@ console.log("IssueData",issueData.project)
   />
 </FormControl>
 
-              </SimpleGrid>
+              </SimpleGrid> */}
               <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
               <FormControl isRequired>
                     <FormLabel htmlFor="priority" color="gray.400">
@@ -859,11 +858,11 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                     >
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
                     </Select>
                   </FormControl>
                   <FormControl isRequired>
@@ -879,11 +878,11 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                     >
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
                     </Select>
                   </FormControl>
                 </SimpleGrid>
@@ -901,7 +900,7 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                     >
                       <option value="MIG">MIG</option>
                       <option value="MT UAT">MT UAT</option>
@@ -922,7 +921,7 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                     >
                       <option value="high">High</option>
                       <option value="medium">Medium</option>
@@ -941,16 +940,16 @@ console.log("IssueData",issueData.project)
     options={[
       { value: 'active', label: 'Active Days' },
       { value: 'claims', label: 'Claims' },
-      { value: 'digital', label: 'Digital Health Assessment' },
+      { value: 'Digital', label: 'Digital Health Assessment' },
     ]}
     displayValue="label"
     selectedValues={
       issueData.impactedSystems
         ? issueData.impactedSystems.split(',').map((val) => {
             const option = [
-              { value: 'active', label: 'Active Days' },
-              { value: 'claims', label: 'Claims' },
-              { value: 'digital', label: 'Digital Health Assessment' },
+              { value: 'Active', label: 'Active Days' },
+              { value: 'Claims', label: 'Claims' },
+              { value: 'Digital', label: 'Digital Health Assessment' },
             ].find((o) => o.value === val);
             return option || { value: val, label: val };
           })
@@ -1033,7 +1032,7 @@ console.log("IssueData",issueData.project)
     options={[
       { value: 'active', label: 'Active Days' },
       { value: 'claims', label: 'Claims' },
-      { value: 'digital', label: 'Digital Health Assessment' },
+      { value: 'Digital', label: 'Digital Health Assessment' },
     ]}
     displayValue="label"
     selectedValues={
@@ -1125,7 +1124,7 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                     >
                         <option value="" disabled selected>Select an Option</option>
                       <option value="Saurav">Saurav Kumar</option>
@@ -1153,7 +1152,7 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                       resize="none"
                       minHeight="20px"
                     />
@@ -1177,7 +1176,7 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                       resize="none"
                       minHeight="20px"
                     />
@@ -1201,7 +1200,7 @@ console.log("IssueData",issueData.project)
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor="white"
+                      backgroundColor={bgColor}
                       resize="none"
                       minHeight="20px"
                     />

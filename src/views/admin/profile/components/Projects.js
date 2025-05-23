@@ -1,16 +1,14 @@
 // Chakra imports
 import { Text, useColorModeValue } from "@chakra-ui/react";
-// Assets
-import Project1 from "assets/img/profile/Project1.png";
-import Project2 from "assets/img/profile/Project2.png";
-import Project3 from "assets/img/profile/Project3.png";
 // Custom components
 import Card from "components/card/Card.js";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Project from "views/admin/profile/components/Project";
+import axios from "axios";
 
-export default function Projects(props) {
-  const { gridColumn } = props;
+export default function Projects({ gridColumn }) {
+  const [tasks, setTasks] = useState([]);
+
   // Chakra Color Mode
   const textColorPrimary = useColorModeValue("secondaryGray.900", "white");
   const textColorSecondary = "gray.400";
@@ -18,64 +16,47 @@ export default function Projects(props) {
     "0px 18px 40px rgba(112, 144, 176, 0.12)",
     "unset"
   );
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8080/api/tasks?assignee=saurav.kumar10"
+        );
+        setTasks(response.data);
+      } catch (error) {
+        console.error("Failed to fetch tasks", error);
+      }
+    };
+
+    fetchTasks();
+  }, []);
+
   return (
-    <Card mb={{ base: "0px", "2xl": "20px" } }gridColumn={gridColumn}>
+    <Card mb={{ base: "0px", "2xl": "20px" }} gridColumn={gridColumn}>
       <Text
         color={textColorPrimary}
-        fontWeight='bold'
-        fontSize='2xl'
-        mt='10px'
-        mb='4px'>
-        Recent Task
+        fontWeight="bold"
+        fontSize="2xl"
+        mt="10px"
+        mb="4px"
+      >
+        Assigned to Me
       </Text>
-      <Text color={textColorSecondary} fontSize='md' me='26px' mb='40px'>
+      <Text color={textColorSecondary} fontSize="md" me="26px" mb="40px">
         Here you can find more details about your projects.
       </Text>
-      <Project
-        boxShadow={cardShadow}
-        mb='20px'
-        ranking='1'
-        title='Technology behind the Blockchain'
-        id='IT-7886'
-      />
-      <Project
-        boxShadow={cardShadow}
-        mb='20px'
-        
-        ranking='2'
-        id='IT-7884'
-        title='Greatest way to a good Economy'
-      />
-      <Project
-        boxShadow={cardShadow}
-       mb='20px'
-        ranking='3'
-        id='IT-1234'
-        title='Most essential tips for Burnout'
-      />
-      <Project
-        boxShadow={cardShadow}
-        mb='20px'
-        ranking='4'
-        id='IT-1234'
-        title='Provider portal maintainance CR'
-      />
-      <Project
-        boxShadow={cardShadow}
-        mb='20px'
-        ranking='4'
-        id='IT-1234'
-        title='Activ Fit modification'
-      />
 
-<Project
-        boxShadow={cardShadow}
-        mb='20px'
-        ranking='4'
-        id='IT-1234'
-        title='Activ Health modification'
-      />
-     
+      {tasks.map((task, index) => (
+        <Project
+          key={task.id}
+          boxShadow={cardShadow}
+          mb="20px"
+          ranking={(index + 1).toString()}
+          title={task.summary || "No Summary"}
+          id={task.issueId || `IT-${task.id}`}
+        />
+      ))}
     </Card>
   );
 }

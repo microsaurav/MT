@@ -33,29 +33,30 @@ export default function Conversion(props) {
     tooltip: { enabled: true, theme: "dark" },
   });
 
-  // Fetch data on component mount
+
   useEffect(() => {
     const fetchChartData = async () => {
       try {
         const response = await axios.get("http://localhost:8080/api/issuecountBybusinessoutcome");
         const apiData = response.data;
-
+  
         const labels = apiData.map(item => item.category);
         const data = apiData.map(item => item.count);
-        console.log("API Data:", apiData);
-        console.log("Labels:", labels);
-        console.log("Data:", data);
-
-        const colorMap = {
-          "Revenue Generation": "#4318FF",
-          "Customer Experience": "#6AD2FF",
-          "Operation Efficiency": "#EFF4FB",
-          "Regulatory": "#FFC107",
-          "Cost reduction": "#FF5733", // Additional categories as needed
-        };
-
-        const colors = labels.map(label => colorMap[label] || "#CCCCCC");
-
+  
+        const dynamicColors = [
+          "#003f5c",
+          "#2f4b7c",
+          "#665191",
+          "#a05195",
+          "#d45087",
+          "#f95d6a",
+          "#ff7c43",
+          "#ffa600"
+        ];
+  
+        // Cycle through colors if there are more labels than colors
+        const colors = labels.map((_, index) => dynamicColors[index % dynamicColors.length]);
+  
         setChartData(data);
         setChartOptions(prev => ({
           ...prev,
@@ -67,10 +68,10 @@ export default function Conversion(props) {
         console.error("Failed to fetch business outcome data", error);
       }
     };
-
+  
     fetchChartData();
   }, []);
-
+  
   return (
     <Card p='20px' align='center' direction='column' w='100%' {...rest}>
       <Flex

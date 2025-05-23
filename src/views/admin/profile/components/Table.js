@@ -1,50 +1,62 @@
-// Table.js
-import React from 'react';
-import { Box, Table, Thead, Tbody, Tr, Th, Td } from '@chakra-ui/react';
+import React, { useEffect, useState } from 'react';
+import { Box, Table, Thead, Tbody, Tr, Th, Td, Center, Flex } from '@chakra-ui/react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const TableCustom = () => {
+  const [data, setData] = useState([]);
+  const navigate = useNavigate();
+  const handleClick = (username, type) => {
+    const query = type === 'Bug'
+      ? `type=Bug`
+      : `notType=Bug`;
+    navigate(`/admin/search?assignee=${encodeURIComponent(username)}&${query}`);
+  };
+  useEffect(() => {
+    axios
+      .get('http://localhost:8080/api/issuecountbyTeammember/saurav.kumar10')
+      .then((res) => {
+        setData(res.data);
+      })
+      .catch((err) => {
+        console.error('Error fetching data:', err);
+      });
+  }, []);
+
   return (
-    <Box maxWidth="100%">
-      <Table overflowX="auto"  variant="simple" width="full">
+    <Box maxWidth="100%" overflowX="auto">
+      <Table variant="simple" width="full">
         <Thead>
           <Tr>
             <Th>Members</Th>
-            <Th>Production</Th>
-            <Th>UAT</Th>
-            <Th>UP</Th>
+            <Th textAlign="center">Bug Count</Th>
+            <Th textAlign="center">CR Count</Th>
           </Tr>
         </Thead>
         <Tbody>
-          <Tr>
-            <Td>Akshita</Td>
-            <Td>10</Td>
-            <Td>10</Td>
-            <Td>10</Td>
-          </Tr>
-          <Tr>
-            <Td>Swangi</Td>
-            <Td>101</Td>
-            <Td>101</Td>
-            <Td>101</Td>
-          </Tr>
-          <Tr>
-            <Td>Anushree</Td>
-            <Td>110</Td>
-            <Td>110</Td>
-            <Td>110</Td>
-          </Tr>
-          <Tr>
-            <Td>Prathmesh</Td>
-            <Td>10</Td>
-            <Td>10</Td>
-            <Td>10</Td>
-          </Tr>
-          <Tr>
-            <Td>Om</Td>
-            <Td>20</Td>
-            <Td>10</Td>
-            <Td>500</Td>
-          </Tr>
+          {data.map((item, index) => (
+            <Tr key={index}>
+              <Td>{item.username}</Td>
+
+              <Td
+                textAlign="center"
+                cursor="pointer"
+                color="blue.500"
+                onClick={() => handleClick(item.username, 'Bug')}
+              >
+                {item.bugCount}
+              </Td>
+
+              <Td
+                textAlign="center"
+                cursor="pointer"
+                color="blue.500"
+                onClick={() => handleClick(item.username, 'CR')}
+              >
+                {item.crCount}
+              </Td>
+            </Tr>
+          ))}
         </Tbody>
       </Table>
     </Box>

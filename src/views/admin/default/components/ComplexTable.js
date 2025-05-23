@@ -239,7 +239,7 @@ export default function ComplexTable() {
         const response = await axios.get("http://localhost:8080/api/CRcountbyteam");
         // Transform the data to match expected format
         const transformedData = response.data.map(item => ({
-          name: item.team,
+          name: item.category,
           status: item.count,
         }));
         setData(transformedData);
