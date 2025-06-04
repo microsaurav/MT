@@ -17,6 +17,7 @@ import Profile from 'views/admin/profile';
 import CreateIssuePage from "views/admin/CreateIssuePage";
 import Yourwork from "views/admin/your-work";
 import JiraLikeWorkflow from "views/admin/JiraWorkflow";
+import SignIn from "views/auth/signIn";
 import IssueSearchPage from "views/admin/IssueSearchPage";
 // const Open = () => {
 //   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -84,6 +85,13 @@ const routes = [
   //   icon: <Icon as={GoTasklist} width="20px" height="20px" color="inherit" />,
   //   component: <JiraLikeWorkflow />,
   // },
+   {
+    name: "Sign In",
+    layout: "/auth",
+    path: "sign-in/default", // or just "login"
+    component: <SignIn />,
+    showInSidebar: false, 
+  },
 ];
 
 export default routes;

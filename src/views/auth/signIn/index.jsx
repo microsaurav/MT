@@ -1,26 +1,3 @@
-/* eslint-disable */
-/*!
-  _   _  ___  ____  ___ ________  _   _   _   _ ___   
- | | | |/ _ \|  _ \|_ _|__  / _ \| \ | | | | | |_ _| 
- | |_| | | | | |_) || |  / / | | |  \| | | | | || | 
- |  _  | |_| |  _ < | | / /| |_| | |\  | | |_| || |
- |_| |_|\___/|_| \_\___/____\___/|_| \_|  \___/|___|
-                                                                                                                                                                                                                                                                                                                                       
-=========================================================
-* Horizon UI - v1.1.0
-=========================================================
-
-* Product Page: https://www.horizon-ui.com/
-* Copyright 2023 Horizon UI (https://www.horizon-ui.com/)
-
-* Designed and Coded by Simmmple
-
-=========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-*/
-
 import React from "react";
 import { NavLink } from "react-router-dom";
 // Chakra imports
@@ -79,7 +56,7 @@ function SignIn() {
         justifyContent='center'
         mb={{ base: "30px", md: "60px" }}
         px={{ base: "25px", md: "0px" }}
-        mt={{ base: "40px", md: "14vh" }}
+        mt={{ base: "2px", md: "3vh" }}
         flexDirection='column'>
         <Box me='auto'>
           <Heading color={textColor} fontSize='36px' mb='10px'>
@@ -117,10 +94,10 @@ function SignIn() {
             _hover={googleHover}
             _active={googleActive}
             _focus={googleActive}>
-            <Icon as={FcGoogle} w='20px' h='20px' me='10px' />
-            Sign in with Google
+            {/* <Icon as={FcGoogle} w='20px' h='20px' me='10px' /> */}
+            Sign in with CyberArk
           </Button>
-          <Flex align='center' mb='25px'>
+          <Flex align='center' mb='15px'>
             <HSeparator />
             <Text color='gray.400' mx='14px'>
               or
@@ -134,7 +111,7 @@ function SignIn() {
               fontSize='sm'
               fontWeight='500'
               color={textColor}
-              mb='8px'>
+              mb='5px'>
               Email<Text color={brandStars}>*</Text>
             </FormLabel>
             <Input
@@ -143,8 +120,8 @@ function SignIn() {
               fontSize='sm'
               ms={{ base: "0px", md: "0px" }}
               type='email'
-              placeholder='mail@simmmple.com'
-              mb='24px'
+              placeholder='mail@adityabirlacapital.com'
+              mb='20px'
               fontWeight='500'
               size='lg'
             />
@@ -161,7 +138,7 @@ function SignIn() {
                 isRequired={true}
                 fontSize='sm'
                 placeholder='Min. 8 characters'
-                mb='24px'
+                mb='20px'
                 size='lg'
                 type={show ? "text" : "password"}
                 variant='auth'
@@ -211,25 +188,7 @@ function SignIn() {
               Sign In
             </Button>
           </FormControl>
-          <Flex
-            flexDirection='column'
-            justifyContent='center'
-            alignItems='start'
-            maxW='100%'
-            mt='0px'>
-            <Text color={textColorDetails} fontWeight='400' fontSize='14px'>
-              Not registered yet?
-              <NavLink to='/auth/sign-up'>
-                <Text
-                  color={textColorBrand}
-                  as='span'
-                  ms='5px'
-                  fontWeight='500'>
-                  Create an Account
-                </Text>
-              </NavLink>
-            </Text>
-          </Flex>
+        
         </Flex>
       </Flex>
     </DefaultAuth>

@@ -8,6 +8,7 @@ import AdminLayout from './layouts/admin'; // Import your AdminLayout
 import AuthLayout from './layouts/auth'; // Auth layout if needed
 import RTLLayout from './layouts/rtl'; // RTL layout if needed
 import { ToastContainer, toast } from "react-toastify";
+
 import "react-toastify/dist/ReactToastify.css";
 
 function Main() {
@@ -23,6 +24,7 @@ function Main() {
       />
       <Routes>
         <Route path="auth/*" element={<AuthLayout />} />
+        
         <Route
           path="admin/*"
           element={<AdminLayout theme={currentTheme} setTheme={setCurrentTheme} />}
