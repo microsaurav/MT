@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   Box,
+
   Card,
   Button,
   Menu,
@@ -45,6 +46,7 @@ import {
   HStack, Divider,
   Tag,
   Icon,
+  Image
 } from "@chakra-ui/react";
 
 import ReactQuill from 'react-quill';
@@ -53,6 +55,7 @@ import Popup from '../WorkflowPopupp';
 import SubtaskPopup from '../SubtaskPopup';
 import { LuFolder, LuSquareCheck, LuUser } from "react-icons/lu"
 import axios from 'axios';
+import Loading from '../components/Loading';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { ChevronDownIcon } from "@chakra-ui/icons";
@@ -63,17 +66,23 @@ export default function Overview() {
 
   const [rows, setRows] = useState([]);
   const [rowsLinkIssue, setRowsLinkIssue] = useState([]);
-
+  const [attachments, setAttachments] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("Open");
+  const [previewFile, setPreviewFile] = useState(null); // { filename, blobUrl, type }
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [status, setStatus] = useState(""); // current status
   const [transitionOptions, setTransitionOptions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false); // control showing select
-
+  const [tabIndex, setTabIndex] = useState(0);
   const [transitionFields, setTransitionFields] = useState([]);
   const [fieldValues, setFieldValues] = useState({});
   const [isTransitionPopupOpen, setIsTransitionPopupOpen] = useState(false);
   const [transitionPopupData, setTransitionPopupData] = useState(null);
   const [transitionFormData, setTransitionFormData] = useState({});
+  const userData = JSON.parse(sessionStorage.getItem("userData"));
+  console.log("userData", userData);  
+  const username = userData.username
   const addRow = () => {
     setRows([...rows, { value: "please add details", selectValue: "Option1" }]);
   };
@@ -152,19 +161,52 @@ export default function Overview() {
 
   const [comments, setComments] = useState([]);
   const quillRef = useRef(null);
+  // Helper function to convert to camelCase
+  function toCamelCase(str) {
+    return str
+      .replace(/\s(.)/g, (match, group1) => group1.toUpperCase())
+      .replace(/^(.)/, (match, group1) => group1.toLowerCase());
+  }
+const fetchComments = async () => {
+  try {
+    const response = await axios.get(`http://localhost:8080/api/comments/getCommentByIssueId/${id}`);
+    const formatted = response.data.map((c) => ({
+      author: c.commentBy,
+      timestamp: new Date(c.timestamp).toLocaleString(),
+      text: c.comment,
+    }));
+    setComments(formatted);
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+  }
+};
 
-  const handleAddComment = () => {
-    const commentText = quillRef.current?.getEditor().getText().trim();
-    if (commentText) {
-      const newComment = {
-        text: commentText,
-        author: 'User',
-        timestamp: new Date().toLocaleString(),
-      };
-      setComments([...comments, newComment]);
-      quillRef.current?.getEditor().setText(''); // Clear editor after submitting
-    }
+ const handleAddComment = async () => {
+  const editor = quillRef.current?.getEditor();
+  const commentText = editor?.getText()?.trim();
+  const commentHTML = editor?.root?.innerHTML?.trim();
+
+  if (!commentText) return;
+
+  const payload = {
+    issueId:id,
+    comment: commentHTML,
+    timestamp: getISTDateTime(),
+    commentBy: username,
   };
+
+  try {
+    setLoading(true);
+    await axios.post("http://localhost:8080/api/comments/postCommentByIssueId", payload);
+    editor.setText(""); // clear editor
+    fetchComments(); // refresh comment list
+  } catch (error) {
+    console.error("Error submitting comment:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const items = [
     { title: "Details", text: "Choose an option below" },
@@ -187,11 +229,75 @@ export default function Overview() {
   const handleFileChange = (e) => {
     setSelectedFiles(Array.from(e.target.files));
   };
+ 
+function getISTDateTime() {
+  const now = new Date();
 
-  const handleUpload = () => {
+  // Format to 'yyyy-MM-ddTHH:mm:ss' using local time (which is already IST)
+  const pad = (n) => n.toString().padStart(2, '0');
+  const formatted =
+    now.getFullYear() +
+    '-' +
+    pad(now.getMonth() + 1) +
+    '-' +
+    pad(now.getDate()) +
+    'T' +
+    pad(now.getHours()) +
+    ':' +
+    pad(now.getMinutes()) +
+    ':' +
+    pad(now.getSeconds());
+
+  return formatted;
+}
+
+
+  const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
 
-    // Merge and filter duplicates by file name
+    for (const file of selectedFiles) {
+      const reader = new FileReader();
+
+      reader.onload = async (e) => {
+        const base64Data = e.target.result.split(",")[1]; // Remove the data prefix
+
+        const payload = {
+          issueId: id, // Replace with dynamic issueId if available
+          filename: file.name,
+          uploadedBy: username, // Replace with dynamic username if needed
+          uploadedTimestamp: getISTDateTime(),
+          filedata: base64Data,
+        };
+        setLoading(true)
+        try {
+
+          const response = await fetch("http://localhost:8080/api/uploadDocument", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            toast.error("Error Uploading File")
+            throw new Error("Upload failed");
+          }
+
+          console.log(`Uploaded: ${file.name}`);
+          toast.success(`File: ${file.name} uploaded successfully!`)
+          fetchAttachments(); // Refresh attachments after upload
+        } catch (error) {
+          console.error(`Failed to upload ${file.name}:`, error);
+        } finally {
+          setLoading(false)
+        }
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    // Merge and deduplicate after upload
     const mergedFiles = [...uploadedFiles, ...selectedFiles];
     const uniqueFiles = Array.from(
       new Map(mergedFiles.map(file => [file.name, file])).values()
@@ -200,6 +306,7 @@ export default function Overview() {
     setUploadedFiles(uniqueFiles);
     setSelectedFiles([]);
   };
+
 
   const handleRemove = (index) => {
     const updated = [...uploadedFiles];
@@ -286,7 +393,7 @@ export default function Overview() {
   const fetchTransitions = () => {
     axios
       .post("http://localhost:8080/api/workflow/transitions", {
-        userRole: "BA",
+        userRole: userData.userRole,
         currentStatus: status,
         workflowId: "WF-1"
       })
@@ -306,6 +413,42 @@ export default function Overview() {
         return "gray";
     }
   };
+  const getFileType = (filename) => {
+    const parts = filename.split(".");
+    return parts.length > 1 ? parts.pop().toLowerCase() : "";
+  };
+
+  const getMimeType = (ext) => {
+    switch (ext) {
+      case "png":
+        return "image/png";
+      case "jpg":
+      case "jpeg":
+        return "image/jpeg";
+      case "gif":
+        return "image/gif";
+      case "webp":
+        return "image/webp";
+      case "pdf":
+        return "application/pdf";
+      case "txt":
+        return "text/plain";
+      case "json":
+        return "application/json";
+      case "csv":
+        return "text/csv";
+      case "doc":
+        return "application/msword";
+      case "docx":
+        return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      case "xls":
+        return "application/vnd.ms-excel";
+      case "xlsx":
+        return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      default:
+        return "application/octet-stream";
+    }
+  };
 
   const handleAccordionChange = (e, field) => {
     setAccordionFields(prev => ({
@@ -313,6 +456,24 @@ export default function Overview() {
       [field]: e.target.value
     }));
   };
+  const fetchAttachments = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(`http://localhost:8080/api/getDocumentsByIssueId/${id}`);
+      if (!response.ok) {
+
+        throw new Error("Failed to fetch attachments");
+      }
+
+      const data = await response.json();
+      setAttachments(data);
+    } catch (error) {
+      console.error("Error fetching attachments:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Populate from API once it's loaded
   useEffect(() => {
     if (issueData) {
@@ -324,8 +485,9 @@ export default function Overview() {
       });
     }
   }, [issueData]);
-
+  if (loading) return <Loading />;
   return (
+
     <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
       <Card flexDirection="column" w="100%" px="25px" mb="20px" overflow="hidden">
         <Popup isOpen={isPopupOpen} data={message} onClose={handleClosePopup} />
@@ -393,28 +555,7 @@ export default function Overview() {
                       Upload
                     </button>
 
-                    {uploadedFiles.length > 0 && (
-                      <div style={styles.fileList}>
-                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>
-                          Uploaded Files:
-                        </h3>
-                        <ul style={{ paddingLeft: '0' }}>
-                          {uploadedFiles.map((file, index) => (
-                            <li key={index} style={styles.listItem}>
-                              <span>
-                                {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                              </span>
-                              <button
-                                style={styles.removeBtn}
-                                onClick={() => handleRemove(index)}
-                              >
-                                Remove
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+
                   </div>
                 </div>
 
@@ -515,7 +656,56 @@ export default function Overview() {
                 <div style={{ margin: "5px" }}>
                   <label style={{ fontSize: "18px", fontWeight: 500 }}>Activity</label>
 
-                  <Tabs defaultIndex={0}>
+                  <Tabs
+                    index={tabIndex}
+                    onChange={(index) => {
+                      setTabIndex(index);
+
+                      // If Attachments tab is selected (index 2)
+                      if (index === 2) {
+                        fetchAttachments();
+                      }
+                      if(index === 0){
+                        fetchComments();
+                      }
+                    }}
+                  >
+                    {/* Preview Modal */}
+                    <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} isCentered>
+                      <ModalOverlay />
+                      <ModalContent
+                        maxW={{ base: "90vw", sm: "80vw", md: "70vw", lg: "60vw", xl: "50vw" }}
+                      >
+                        <ModalHeader>{previewFile?.filename}</ModalHeader>
+                        <ModalCloseButton />
+                        <ModalBody>
+                          {previewFile?.type === "pdf" ? (
+                            <iframe
+                              src={previewFile.blobUrl}
+                              width="100%"
+                              height="500px"
+                              title={previewFile.filename}
+                              style={{ borderRadius: "8px", border: "1px solid #ddd" }}
+                            />
+                          ) : ["png", "jpg", "jpeg", "gif", "webp"].includes(previewFile?.type) ? (
+                            <Image
+                              src={previewFile.blobUrl}
+                              alt={previewFile.filename}
+                              maxW="100%"
+                              maxH="500px"
+                              borderRadius="md"
+                            />
+                          ) : (
+                            <Text>Preview not available for this file type.</Text>
+                          )}
+                        </ModalBody>
+                        <ModalFooter>
+                          <Button onClick={() => setIsPreviewOpen(false)}>Close</Button>
+                        </ModalFooter>
+                      </ModalContent>
+                    </Modal>
+
+
                     <TabList>
                       <Tab>
                         <LuUser />
@@ -552,7 +742,7 @@ export default function Overview() {
                                     <Text fontSize="sm" color="gray.500">{comment.timestamp}</Text>
                                   </Box>
                                 </HStack>
-                                <Text>{comment.text}</Text>
+                                <Box dangerouslySetInnerHTML={{ __html: comment.text }} />
                                 <Divider mt={3} />
                               </Box>
                             ))
@@ -563,8 +753,95 @@ export default function Overview() {
                         <p>Manage your projects</p>
                       </TabPanel>
                       <TabPanel>
-                        <p>Manage your tasks for freelancers</p>
+                        {attachments.length === 0 ? (
+                          <Text>No attachments</Text>
+                        ) : (
+                          <VStack align="stretch" spacing={5}>
+                            {["TSD", "FSD", "Others"].map((category) => {
+                              const filtered = attachments.filter((att) => {
+                                const name = att.filename.toLowerCase();
+                                if (category === "TSD") return name.includes("tsd");
+                                if (category === "FSD") return name.includes("fsd");
+                                return !name.includes("tsd") && !name.includes("fsd");
+                              });
+
+                              if (filtered.length === 0) return null;
+
+                              return (
+                                <Box key={category}>
+                                  <HStack mb={2}>
+                                    <Icon as={LuFolder} color="blue.500" />
+                                    <Text fontWeight="bold" fontSize="lg">
+                                      {category} Documents
+                                    </Text>
+                                  </HStack>
+                                  <VStack spacing={3} align="stretch">
+                                    {filtered.map((att) => {
+                                      const fileType = getFileType(att.filename);
+                                      const mimeType = getMimeType(fileType);
+                                      const blobUrl = `data:${mimeType};base64,${att.filedata}`;
+                                      const isImage = mimeType.startsWith("image");
+
+                                      const isPDF = mimeType === "application/pdf";
+
+                                      return (
+                                        <HStack
+                                          key={att.attachmentId}
+                                          p={2}
+                                          bg="gray.50"
+                                          borderRadius="md"
+                                          justify="space-between"
+                                        >
+                                          {isImage ? (
+                                            <Image
+                                              boxSize="50px"
+                                              src={blobUrl}
+                                              alt={att.filename}
+                                              objectFit="cover"
+                                              borderRadius="md"
+                                            />
+                                          ) : (
+                                            <Icon as={LuFolder} boxSize={6} color="gray.400" />
+                                          )}
+
+                                          <VStack align="start" flex="1" spacing={0}>
+                                            <Text fontWeight="medium">{att.filename}</Text>
+                                            <Text fontSize="sm" color="gray.500">
+                                              {att.uploadedBy} • {new Date(att.uploadedTimestamp).toLocaleString()}
+                                            </Text>
+                                          </VStack>
+
+                                          <HStack spacing={2}>
+                                            <a href={blobUrl} download={att.filename}>
+                                              <Button size="sm">Download</Button>
+                                            </a>
+                                            <Button
+                                              size="sm"
+                                              onClick={() => {
+                                                setPreviewFile({
+                                                  filename: att.filename,
+                                                  blobUrl,
+                                                  type: fileType,
+                                                  mimeType,
+                                                });
+                                                setIsPreviewOpen(true);
+                                              }}
+                                            >
+                                              View
+                                            </Button>
+                                          </HStack>
+                                        </HStack>
+                                      );
+                                    })}
+
+                                  </VStack>
+                                </Box>
+                              );
+                            })}
+                          </VStack>
+                        )}
                       </TabPanel>
+
                     </TabPanels>
                   </Tabs>
                 </div>
@@ -735,40 +1012,30 @@ export default function Overview() {
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <VStack spacing={5} align="stretch">
-              {transitionPopupData?.requiredFields
-                ?.split(",")
-                .map((field) => {
-                  const trimmedField = field.trim();
-                  const isDate = trimmedField.toLowerCase().includes("date");
-
-                  return (
-                    <FormControl key={trimmedField}>
-                      <FormLabel fontWeight="medium">
-                        {trimmedField} <span style={{ color: 'red' }}>*</span>
-                      </FormLabel>
-                      <Input
-                        type={isDate ? "date" : "text"}
-                        placeholder={`Enter ${trimmedField}`}
-                        value={transitionFormData[trimmedField] || ""}
-                        onChange={(e) =>
-                          setTransitionFormData((prev) => ({
-                            ...prev,
-                            [trimmedField]: e.target.value,
-                          }))
-                        }
-                      />
-                    </FormControl>
-                  );
-                })}
-            </VStack>
+            {previewFile?.mimeType === "application/pdf" ? (
+              <iframe
+                src={previewFile.blobUrl}
+                width="100%"
+                height="500px"
+                title={previewFile.filename}
+              />
+            ) : previewFile?.mimeType?.startsWith("image") ? (
+              <Image
+                src={previewFile.blobUrl}
+                alt={previewFile.filename}
+                maxW="100%"
+                borderRadius="md"
+              />
+            ) : (
+              <Text>Preview not available for this file type.</Text>
+            )}
           </ModalBody>
 
           <ModalFooter>
             <Button
               colorScheme="blue"
               mr={3}
-              onClick={() => {
+              onClick={async () => {
                 const requiredFields = transitionPopupData?.requiredFields
                   ?.split(",")
                   .map((f) => f.trim()) || [];
@@ -782,14 +1049,48 @@ export default function Overview() {
                   return;
                 }
 
-                console.log("Form Submitted:", transitionFormData);
-                setIsTransitionPopupOpen(false);
-                handleStatusChange(transitionPopupData?.toStatus);
+                // Build payload for crDataPush API
+                const payload = {
+                  issueId: id, // Replace "IT-1" with your fallback logic
+                  status: transitionPopupData?.toStatus,
+                };
+
+                requiredFields.forEach((field) => {
+                  const camelKey = toCamelCase(field); // Convert to camelCase
+                  payload[camelKey] = transitionFormData[field];
+                });
+
+                try {
+                  const response = await fetch("http://localhost:8080/api/crDataPush", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error("Failed to submit the form.");
+                  }
+
+                  toast.success("Form submitted successfully!");
+                  setTransitionFormData({});
+                  setIsTransitionPopupOpen(false);
+                  handleStatusChange(transitionPopupData?.toStatus);
+                } catch (error) {
+                  toast.error("Error submitting the form.");
+                  console.error(error);
+                }
               }}
             >
               Submit
             </Button>
-            <Button variant="ghost" onClick={() => setIsTransitionPopupOpen(false)}>
+
+            <Button variant="ghost" onClick={() => {
+              setTransitionFormData({});
+              setIsTransitionPopupOpen(false);
+            }}
+            >
               Cancel
             </Button>
           </ModalFooter>
