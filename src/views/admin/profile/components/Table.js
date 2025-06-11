@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom';
 const TableCustom = () => {
   const [data, setData] = useState([]);
   const navigate = useNavigate();
+  const userData = JSON.parse(sessionStorage.getItem("userData"));
+ 
   const handleClick = (username, type) => {
     const query = type === 'Bug'
       ? `type=Bug`
@@ -14,7 +16,7 @@ const TableCustom = () => {
   };
   useEffect(() => {
     axios
-      .get('http://localhost:8080/api/issuecountbyTeammember/saurav.kumar10')
+      .get(`http://localhost:8080/api/issuecountbyTeammember/${userData.username}`)
       .then((res) => {
         setData(res.data);
       })

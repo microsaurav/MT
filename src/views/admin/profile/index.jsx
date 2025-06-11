@@ -15,19 +15,20 @@ import avatar from "assets/img/avatars/avatar4.png";
 import React from "react";
 
 export default function Overview() {
-  const [userData, setUserData] = useState(null);
-
+  const [userResponse, setUserResponse] = useState(null);
+  const userData = JSON.parse(sessionStorage.getItem("userData"));
+  const username = userData.username
   useEffect(() => {
     axios
-      .get("http://localhost:8080/api/issuecountbyUser/akshita.gupta2")
+      .get(`http://localhost:8080/api/issuecountbyUser/${username}`)
       .then((res) => {
-        setUserData(res.data[0]); // assuming response is always an array with one object
+        setUserResponse(res.data[0]); // assuming response is always an array with one object
       })
       .catch((err) => {
         console.error("Failed to fetch user data:", err);
       });
   }, []);
-  if (!userData) {
+  if (!userResponse) {
     return (
       <Center h="200px">
         <Text fontSize="lg" color="gray.500">
@@ -55,10 +56,10 @@ export default function Overview() {
           gridArea="1 / 1 / 2 / 2"
           banner={banner}
           avatar={avatar}
-          name={userData.username || "User"}
+          name={userResponse.username || "User"}
           // job="Software Developer"
-          bugCount={userData.bugCount}
-          crCount={userData.crCount}
+          bugCount={userResponse.bugCount}
+          crCount={userResponse.crCount}
         />
         <Defect
           gridArea={{ base: "2 / 1 / 3 / 3", lg: "1 / 2 / 2 / 4" }}

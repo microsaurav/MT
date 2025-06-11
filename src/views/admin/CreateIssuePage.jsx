@@ -163,10 +163,10 @@ console.log("IssueData",issueData.project)
             Select an option
           </option>
           <option value="CR">Change Request</option>
-          <option value="Bug">Bug</option>
           <option value="Project">Project</option>
           <option value="BAU">BAU Projects</option>
-          <option value="Service Request">Service Request</option>
+          <option style={{color: "#D3D3D3"}} disabled value="Service Request">Service Request</option>
+          <option style={{color: "#D3D3D3"}}disabled value="Bug">Bug</option>
         </Select>
       </FormControl>
     </SimpleGrid>

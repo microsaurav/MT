@@ -11,7 +11,7 @@ import {
   Editable,
   EditableInput,
   EditablePreview,
-  Select, 
+  Select,
   Tabs,
   TabList,
   TabPanels,
@@ -22,18 +22,29 @@ import {
   PopoverContent,
   PopoverArrow,
   PopoverCloseButton,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  FormControl,
+  FormLabel,
   PopoverHeader,
   PopoverBody,
   Accordion,
-  AccordionItem, 
-  AccordionButton, 
+  AccordionItem,
+  AccordionButton,
   AccordionPanel,
   AccordionIcon,
   Input,
-  VStack, 
+  VStack,
   Text,
   Avatar,
-  HStack, Divider
+  HStack, Divider,
+  Tag,
+  Icon,
 } from "@chakra-ui/react";
 
 import ReactQuill from 'react-quill';
@@ -44,14 +55,25 @@ import { LuFolder, LuSquareCheck, LuUser } from "react-icons/lu"
 import axios from 'axios';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-
+import { ChevronDownIcon } from "@chakra-ui/icons";
+import { ArrowRightIcon } from "lucide-react"; // optional icon
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import the default styles
 export default function Overview() {
 
   const [rows, setRows] = useState([]);
   const [rowsLinkIssue, setRowsLinkIssue] = useState([]);
 
   const [message, setMessage] = useState("Open");
+  const [status, setStatus] = useState(""); // current status
+  const [transitionOptions, setTransitionOptions] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false); // control showing select
 
+  const [transitionFields, setTransitionFields] = useState([]);
+  const [fieldValues, setFieldValues] = useState({});
+  const [isTransitionPopupOpen, setIsTransitionPopupOpen] = useState(false);
+  const [transitionPopupData, setTransitionPopupData] = useState(null);
+  const [transitionFormData, setTransitionFormData] = useState({});
   const addRow = () => {
     setRows([...rows, { value: "please add details", selectValue: "Option1" }]);
   };
@@ -94,49 +116,12 @@ export default function Overview() {
     setRowsLinkIssue(updatedRows);
   };
 
-  const statusFlow = {
-    "To Do": [
-      { status: "WIP", description: "Start working on the task" }
-    ],
-    "WIP": [
-      { status: "In Review", description: "Task is ready for review" },
-      { status: "Blocked", description: "Task is blocked, needs attention" }
-    ],
-    "In Review": [
-      { status: "Done", description: "Task has been approved and completed" },
-      { status: "Blocked", description: "Task is blocked, needs attention" }
-    ],
-    "Blocked": [
-      { status: "To Do", description: "Reopen the task to address issues" }
-    ],
-    "Done": []
-  };
 
-  const statusFlowBA = {
-    "Open": [
-      { status: "CR Review", description: "Start working on the task" }
-    ],
-    "CR Review": [
-      { status: "Business Clarification", description: "Task is ready for review" },
-      { status: "Reject", description: "Task is blocked, needs attention" }
-    ],
-    "Business Clarification": [
-      { status: "Approve", description: "Task has been approved and completed" },
-      { status: "Reject", description: "Task is blocked, needs attention" }
-    ],
-    "Approve": [
-      { status: "Assign to BA", description: "Task has been approved and completed" },
-    ],
-    "Reject": [
-      { status: "Open", description: "Reopen the task to address issues" }
-    ],
-    "Done": []
-  };
 
-const [isOpen, setIsOpen] = useState(false);
-const [status, setStatus] = useState("Open");
+  const [isOpen, setIsOpen] = useState(false);
 
-const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   const handleOpenPopup = () => {
     setIsPopupOpen(true);
@@ -155,17 +140,17 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
   const handleSubtaskClosePopup = () => {
     setIsSubtaskPopupOpen(false);
   };
-// Toggle the popover
-const handleToggle = () => setIsOpen((prev) => !prev);
+  // Toggle the popover
+  const handleToggle = () => setIsOpen((prev) => !prev);
 
-// Change status and close popover
-const handleStatusChange = (newStatus) => {
-  setStatus(newStatus);
-  setMessage(newStatus); 
-  setIsOpen(false);
-};
+  // Change status and close popover
+  const handleStatusChange = (newStatus) => {
+    setStatus(newStatus);
+    setMessage(newStatus);
+    setIsOpen(false);
+  };
 
-const [comments, setComments] = useState([]);
+  const [comments, setComments] = useState([]);
   const quillRef = useRef(null);
 
   const handleAddComment = () => {
@@ -181,20 +166,20 @@ const [comments, setComments] = useState([]);
     }
   };
 
-const items = [
-  { title: "Details", text: "Choose an option below" },
- 
-];
+  const items = [
+    { title: "Details", text: "Choose an option below" },
 
-const [selectedOption, setSelectedOption] = useState("Option1");
+  ];
 
-const handleChangeAccordian = (e) => {
-  setSelectedOption(e.target.value);
-};
+  const [selectedOption, setSelectedOption] = useState("Option1");
 
-const [isOpen1, setIsOpen1] = useState(false);
+  const handleChangeAccordian = (e) => {
+    setSelectedOption(e.target.value);
+  };
+
+  const [isOpen1, setIsOpen1] = useState(false);
   const [isOpen2, setIsOpen2] = useState(false);
-  let {id} = useParams();
+  let { id } = useParams();
 
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -271,13 +256,13 @@ const [isOpen1, setIsOpen1] = useState(false);
     },
   };
   const [editableFields, setEditableFields] = useState({});
-  const [issueData,setIssueData] = useState("");
+  const [issueData, setIssueData] = useState("");
   useEffect(() => {
     axios
       .get(`http://localhost:8080/api/GetIssuedetailsbyissueid/${id}`)
       .then((response) => {
         setIssueData(response.data);
-  
+        setStatus(response.data.status || "Open");
         // Initialize editable fields once API call is successful
         const initialFields = {
           "Description": response.data.description || "NA",
@@ -298,6 +283,30 @@ const [isOpen1, setIsOpen1] = useState(false);
     priority: "",
     primaryBA: ""
   });
+  const fetchTransitions = () => {
+    axios
+      .post("http://localhost:8080/api/workflow/transitions", {
+        userRole: "BA",
+        currentStatus: status,
+        workflowId: "WF-1"
+      })
+      .then((response) => {
+        setTransitionOptions(response.data.transition || []);
+        setShowDropdown(true);
+      })
+      .catch((error) => {
+        console.error("Error fetching transitions:", error);
+      });
+  };
+  const getTagColor = (status) => {
+    switch (status) {
+      case "FSD Creation":
+        return "blue";
+      default:
+        return "gray";
+    }
+  };
+
   const handleAccordionChange = (e, field) => {
     setAccordionFields(prev => ({
       ...prev,
@@ -315,20 +324,20 @@ const [isOpen1, setIsOpen1] = useState(false);
       });
     }
   }, [issueData]);
-  
+
   return (
     <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
       <Card flexDirection="column" w="100%" px="25px" mb="20px" overflow="hidden">
-      <Popup isOpen={isPopupOpen} data={message} onClose={handleClosePopup} />
-      <SubtaskPopup isOpen={isSubtaskPopupOpen} onClose={handleSubtaskClosePopup} />
+        <Popup isOpen={isPopupOpen} data={message} onClose={handleClosePopup} />
+        <SubtaskPopup isOpen={isSubtaskPopupOpen} onClose={handleSubtaskClosePopup} />
         <div style={{ display: "flex", width: "100%" }}>
 
           {/* Left Section (70%) */}
           <div style={{ flex: 6 }}>
             <div>
-            <div style={{ fontSize: "22px", fontWeight: 500, marginTop: "10px" }}>
-  {issueData ? issueData.summary : "Loading summary..."}
-</div>
+              <div style={{ fontSize: "22px", fontWeight: 500, marginTop: "10px" }}>
+                {issueData ? issueData.summary : "Loading summary..."}
+              </div>
               <div>
                 <Menu>
                   <MenuButton as={Button} variant="outline" size="sm">
@@ -338,8 +347,8 @@ const [isOpen1, setIsOpen1] = useState(false);
                     <MenuList>
                       <MenuItem>Attachment</MenuItem>
                       <MenuItem onClick={() => {
-                            handleSubtaskOpenPopup();
-                          }}>Subtask</MenuItem>
+                        handleSubtaskOpenPopup();
+                      }}>Subtask</MenuItem>
                       <MenuItem onClick={addRowLinkIssue}>Linked Issue</MenuItem>
                       <MenuItem>Web Link</MenuItem>
                     </MenuList>
@@ -349,64 +358,64 @@ const [isOpen1, setIsOpen1] = useState(false);
 
               {/* Editable Sections */}
               <div style={{ margin: "5px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              {["Description", "In Scope", "Out Scope", "Business Need Benefits Details"].map((label, index) => (
-  <div key={index} style={{ margin: "5px" }}>
-    <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
-    <div>
-      <Editable
-        textAlign="start"
-        value={editableFields[label] || ""}
-        onChange={(val) =>
-          setEditableFields((prev) => ({
-            ...prev,
-            [label]: val,
-          }))
-        }
-      >
-        <EditablePreview />
-        <EditableInput />
-      </Editable>
-    </div>
-  </div>
-))}
+                {["Description", "In Scope", "Out Scope", "Business Need Benefits Details"].map((label, index) => (
+                  <div key={index} style={{ margin: "5px" }}>
+                    <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
+                    <div>
+                      <Editable
+                        textAlign="start"
+                        value={editableFields[label] || ""}
+                        onChange={(val) =>
+                          setEditableFields((prev) => ({
+                            ...prev,
+                            [label]: val,
+                          }))
+                        }
+                      >
+                        <EditablePreview />
+                        <EditableInput />
+                      </Editable>
+                    </div>
+                  </div>
+                ))}
 
                 <div style={{ margin: "5px" }}>
                   <label style={{ fontSize: "18px", fontWeight: 500 }}>Attachments</label>
                   <div>
-                      <input
-                        type="file"
-                        multiple
-                        onChange={handleFileChange}
-                        style={styles.fileInput}
-                      />
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileChange}
+                      style={styles.fileInput}
+                    />
 
-                      <button onClick={handleUpload} style={styles.button}>
-                        Upload
-                      </button>
+                    <button onClick={handleUpload} style={styles.button}>
+                      Upload
+                    </button>
 
-                      {uploadedFiles.length > 0 && (
-                        <div style={styles.fileList}>
-                          <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>
-                            Uploaded Files:
-                          </h3>
-                          <ul style={{ paddingLeft: '0' }}>
-                            {uploadedFiles.map((file, index) => (
-                              <li key={index} style={styles.listItem}>
-                                <span>
-                                  {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                                </span>
-                                <button
-                                  style={styles.removeBtn}
-                                  onClick={() => handleRemove(index)}
-                                >
-                                  Remove
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                    {uploadedFiles.length > 0 && (
+                      <div style={styles.fileList}>
+                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>
+                          Uploaded Files:
+                        </h3>
+                        <ul style={{ paddingLeft: '0' }}>
+                          {uploadedFiles.map((file, index) => (
+                            <li key={index} style={styles.listItem}>
+                              <span>
+                                {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                              </span>
+                              <button
+                                style={styles.removeBtn}
+                                onClick={() => handleRemove(index)}
+                              >
+                                Remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Subtask Section */}
@@ -415,8 +424,8 @@ const [isOpen1, setIsOpen1] = useState(false);
                   <div>
                     {rows.map((row, index) => (
                       <div key={index} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "5px" }}>
-                        
-                       
+
+
                         <Select
                           value={row.selectValue}
                           onChange={(e) => handleSelectChange(e, index)}
@@ -428,7 +437,7 @@ const [isOpen1, setIsOpen1] = useState(false);
                           <option value="Option4">Sub-Task</option>
                         </Select>
 
-                        
+
                         <Editable
                           defaultValue={row.value}
                           onChange={(val) => handleChange(val, index)}
@@ -462,7 +471,7 @@ const [isOpen1, setIsOpen1] = useState(false);
                   <div>
                     {rowsLinkIssue.map((row, index) => (
                       <div key={index} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "5px" }}>
-                        
+
                         {/* Select Dropdown */}
                         <Select
                           value={row.selectValue}
@@ -502,61 +511,61 @@ const [isOpen1, setIsOpen1] = useState(false);
                     ))}
                   </div>
                 </div>
-                
+
                 <div style={{ margin: "5px" }}>
-                <label style={{ fontSize: "18px", fontWeight: 500 }}>Activity</label>
+                  <label style={{ fontSize: "18px", fontWeight: 500 }}>Activity</label>
 
-                <Tabs defaultIndex={0}>
-                  <TabList>
-                    <Tab>
-                      <LuUser />
-                      Comments
-                    </Tab>
-                    <Tab>
-                      <LuFolder />
-                      Link Issues
-                    </Tab>
-                    <Tab>
-                      <LuSquareCheck />
-                      Attachments
-                    </Tab>
-                  </TabList>
+                  <Tabs defaultIndex={0}>
+                    <TabList>
+                      <Tab>
+                        <LuUser />
+                        Comments
+                      </Tab>
+                      <Tab>
+                        <LuFolder />
+                        Link Issues
+                      </Tab>
+                      <Tab>
+                        <LuSquareCheck />
+                        Attachments
+                      </Tab>
+                    </TabList>
 
-                  <TabPanels>
-                    <TabPanel>
-                          {/* Editor Section */}
-                          <ReactQuill ref={quillRef} theme="snow" />
-                          <Button colorScheme="blue" mt={3} onClick={handleAddComment}>Submit Comment</Button>
+                    <TabPanels>
+                      <TabPanel>
+                        {/* Editor Section */}
+                        <ReactQuill ref={quillRef} theme="snow" />
+                        <Button colorScheme="blue" mt={3} onClick={handleAddComment}>Submit Comment</Button>
 
-                          {/* Comments Section - Styled like Jira */}
-                          <VStack mt={5} align="stretch" spacing={4}>
-                            <Text fontSize="lg" fontWeight="bold">Comments:</Text>
-                            {comments.length === 0 ? (
-                              <Text>No comments yet</Text>
-                            ) : (
-                              comments.map((comment, index) => (
-                                <Box key={index} p={4} borderWidth={1} borderRadius="lg" bg="gray.50">
-                                  <HStack mb={2}>
-                                    <Avatar name={comment.author} size="sm" />
-                                    <Box>
-                                      <Text fontWeight="bold">{comment.author}</Text>
-                                      <Text fontSize="sm" color="gray.500">{comment.timestamp}</Text>
-                                    </Box>
-                                  </HStack>
-                                  <Text>{comment.text}</Text>
-                                  <Divider mt={3} />
-                                </Box>
-                              ))
-                            )}
-                          </VStack>
-                    </TabPanel>
-                    <TabPanel>
-                      <p>Manage your projects</p>
-                    </TabPanel>
-                    <TabPanel>
-                      <p>Manage your tasks for freelancers</p>
-                    </TabPanel>
-                  </TabPanels>
+                        {/* Comments Section - Styled like Jira */}
+                        <VStack mt={5} align="stretch" spacing={4}>
+                          <Text fontSize="lg" fontWeight="bold">Comments:</Text>
+                          {comments.length === 0 ? (
+                            <Text>No comments yet</Text>
+                          ) : (
+                            comments.map((comment, index) => (
+                              <Box key={index} p={4} borderWidth={1} borderRadius="lg" bg="gray.50">
+                                <HStack mb={2}>
+                                  <Avatar name={comment.author} size="sm" />
+                                  <Box>
+                                    <Text fontWeight="bold">{comment.author}</Text>
+                                    <Text fontSize="sm" color="gray.500">{comment.timestamp}</Text>
+                                  </Box>
+                                </HStack>
+                                <Text>{comment.text}</Text>
+                                <Divider mt={3} />
+                              </Box>
+                            ))
+                          )}
+                        </VStack>
+                      </TabPanel>
+                      <TabPanel>
+                        <p>Manage your projects</p>
+                      </TabPanel>
+                      <TabPanel>
+                        <p>Manage your tasks for freelancers</p>
+                      </TabPanel>
+                    </TabPanels>
                   </Tabs>
                 </div>
 
@@ -569,152 +578,227 @@ const [isOpen1, setIsOpen1] = useState(false);
 
           {/* Right Section (30%) */}
           <div style={{ flex: 4 }}>
-          <div style={{ marginTop: "10px" , marginLeft: "10px" }}>
-            {/* Popover */}
-            <Popover isOpen={isOpen} onClose={() => setIsOpen(false)}>
-              <PopoverTrigger>
-              <Button
-                onClick={handleToggle}
-                size="sm"
-                variant="outline"
-                colorScheme={
-                  status === "Open"
-                    ? "blue"
-                    : status === "CR Review"
-                    ? "yellow"
-                    : status === "Business Clarification"
-                    ? "teal"
-                    : status === "Approve"
-                    ? "green"
-                    : status === "Assign to BA"
-                    ? "orange"
-                    : status === "Reject"
-                    ? "red"
-                    : "gray"
-                }
-                
-                borderRadius="4px"
-                ml={2}
-              >
-                {status}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent>
-              <PopoverArrow />
-              <PopoverCloseButton />
-              <PopoverBody>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {statusFlowBA[status].map((item) => (
-                    <div key={item.status} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Button
-                          size="sm"
-                          variant="outline"
-                          colorScheme={
-                            status === "Open"
-                              ? "blue"
-                              : status === "CR Review"
-                              ? "yellow"
-                              : status === "Business Clarification"
-                              ? "teal"
-                              : status === "Approve"
-                              ? "green"
-                              : status === "Assign to BA"
-                              ? "orange"
-                              : status === "Reject"
-                              ? "red"
-                              : "gray"
-                          }
-                          
+            <div style={{ marginTop: "10px", marginLeft: "10px" }}>
+              {/* Popover */}
+              <Popover isOpen={isOpen} onClose={() => setIsOpen(false)}>
+                <PopoverTrigger>
+
+                  <div>
+                    <Menu isOpen={showDropdown} onClose={() => setShowDropdown(false)}>
+                      <MenuButton
+                        as={Button}
+                        size="sm"
+                        variant="outline"
+                        rightIcon={<ChevronDownIcon />}
+                        onClick={() => {
+                          fetchTransitions(); // still calls your API
+                          setShowDropdown(!showDropdown);
+                        }}
+                      >
+                        {status || "Change Status"}
+                      </MenuButton>
+
+                      <MenuList minW="250px" p={1}>
+                        {transitionOptions.map((option, index) => (
+                          <MenuItem
+                            key={index}
+                            onClick={() => {
+                              if (option.hasScreen) {
+                                const fields = option.requiredFields
+                                  ? option.requiredFields.split(",").map((f) => f.trim())
+                                  : [];
+                                setTransitionPopupData({ ...option, parsedFields: fields });
+                                setIsTransitionPopupOpen(true);
+                              } else {
+                                handleStatusChange(option.toStatus);
+                              }
+                              setShowDropdown(false);
+                            }}
+                            px={3}
+                            py={2}
+                          >
+                            <HStack justify="space-between" w="100%">
+                              <Box>
+                                <Text fontSize="sm">{option.action || "Transition to"}</Text>
+                              </Box>
+                              <HStack>
+                                <Icon as={ArrowRightIcon} boxSize={4} />
+                                <Tag
+                                  size="sm"
+                                  variant="solid"
+                                  colorScheme={getTagColor(option.toStatus)}
+                                >
+                                  {option.toStatus}
+                                </Tag>
+                              </HStack>
+                            </HStack>
+                          </MenuItem>
+                        ))}
+
+                        {/* <MenuItem
                           onClick={() => {
-                            handleStatusChange(item.status);
-                            handleOpenPopup();
+                            console.log("View workflow clicked");
                           }}
-                          borderRadius="4px"
+                          mt={1}
+                          fontSize="sm"
+                          fontWeight="medium"
+                          color="blue.500"
                         >
-                          {item.status}
-                        </Button>
+                          View workflow
+                        </MenuItem> */}
+                      </MenuList>
+                    </Menu>
+                  </div>
 
-                      <span style={{ fontSize: '12px', color: '#555' }}>
-                        {item.description}
-                      </span>
+                </PopoverTrigger>
+              </Popover>
+            </div>
 
-                     
-                    </div>
-                  ))}
-                </div>
-              </PopoverBody>
-            </PopoverContent>
-            </Popover>
-          </div>
-
-          <div style={{ marginTop: "10px" , marginLeft: "10px" }}>
+            <div style={{ marginTop: "10px", marginLeft: "10px" }}>
               <div>
-              <Accordion allowMultiple>
-      {items.map((item, index) => (
-        <AccordionItem key={index}>
-          <h2>
-            <AccordionButton>
-              <Box flex="1" textAlign="left">{item.title}</Box>
-              <AccordionIcon />
-            </AccordionButton>
-          </h2>
-          <AccordionPanel>
-            {index === 0 ? (
-              <div  style={{display:'flex' , flexDirection:'column' , gap:'10px'}}>
-                <div style={{display:'flex' , flexDirection:'row' , justifyContent:'space-between', alignItems:'center'}}>
-                <label>Assignee</label>
-                <Select value={accordionFields.assignee} onChange={(e) => handleAccordionChange(e, "assignee")} width="200px">
-                  <option value="Option1">Saurav Kumar</option>
-                  <option value="Option2">Om Thange</option>
-                  <option value="Option3">Prathamesh Kokane</option>
-                </Select>
-              </div>
+                <Accordion allowMultiple>
+                  {items.map((item, index) => (
+                    <AccordionItem key={index}>
+                      <h2>
+                        <AccordionButton>
+                          <Box flex="1" textAlign="left">{item.title}</Box>
+                          <AccordionIcon />
+                        </AccordionButton>
+                      </h2>
+                      <AccordionPanel>
+                        {index === 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <label>Assignee</label>
+                              <Select value={accordionFields.assignee} onChange={(e) => handleAccordionChange(e, "assignee")} width="200px">
+                                <option value="Option1">Saurav Kumar</option>
+                                <option value="Option2">Om Thange</option>
+                                <option value="Option3">Prathamesh Kokane</option>
+                              </Select>
+                            </div>
 
-              <div style={{display:'flex' , flexDirection:'row' , justifyContent:'space-between', alignItems:'center'}}>
-                <label>Reporter</label>
-                <Select value={accordionFields.reporter} onChange={(e) => handleAccordionChange(e, "reporter")} width="200px">
-                  <option value="saurav.kumar10">Saurav Kumar</option>
-                  <option value="HI448213">Om Thange</option>
-                </Select>
-              </div>
+                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <label>Reporter</label>
+                              <Select value={accordionFields.reporter} onChange={(e) => handleAccordionChange(e, "reporter")} width="200px">
+                                <option value="saurav.kumar10">Saurav Kumar</option>
+                                <option value="HI448213">Om Thange</option>
+                              </Select>
+                            </div>
 
-              
 
-              <div style={{display:'flex' , flexDirection:'row' , justifyContent:'space-between', alignItems:'center'}}>
-                <label>Priority</label>
-                <Select value={accordionFields.priority} onChange={(e) => handleAccordionChange(e, "priority")} width="200px">
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </Select>
-              </div>
 
-              <div style={{display:'flex' , flexDirection:'row' , justifyContent:'space-between', alignItems:'center'}}>
-                <label>CR Approved Date</label>
-                
-              </div>
+                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <label>Priority</label>
+                              <Select value={accordionFields.priority} onChange={(e) => handleAccordionChange(e, "priority")} width="200px">
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                              </Select>
+                            </div>
 
-              <div style={{display:'flex' , flexDirection:'row' , justifyContent:'space-between', alignItems:'center'}}>
-                <label>Primary BA</label>
-                <Select value={accordionFields.primaryBA} onChange={(e) => handleAccordionChange(e, "primaryBA")} width="200px">
-                  <option value="Prachi Darade">Prachi Darade</option>
-                  <option value="Mahesh nair">Mahesh nair</option>
-                </Select>
+                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <label>CR Approved Date</label>
+
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <label>Primary BA</label>
+                              <Select value={accordionFields.primaryBA} onChange={(e) => handleAccordionChange(e, "primaryBA")} width="200px">
+                                <option value="Prachi Darade">Prachi Darade</option>
+                                <option value="Mahesh nair">Mahesh nair</option>
+                              </Select>
+                            </div>
+                          </div>
+
+                        ) : (
+                          <p>{item.text}</p>
+                        )}
+                      </AccordionPanel>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               </div>
-              </div>
-              
-            ) : (
-              <p>{item.text}</p>
-            )}
-          </AccordionPanel>
-        </AccordionItem>
-      ))}
-    </Accordion>
-              </div>
-          </div>
+            </div>
           </div>
         </div>
       </Card>
+      <Modal
+        isOpen={isTransitionPopupOpen}
+        onClose={() => setIsTransitionPopupOpen(false)}
+        size="xl"
+        isCentered
+      >
+        <ModalOverlay />
+        <ModalContent borderRadius="lg" boxShadow="lg">
+          <ModalHeader fontWeight="bold" fontSize="xl">
+            {transitionPopupData?.toStatus} - Required Fields
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={5} align="stretch">
+              {transitionPopupData?.requiredFields
+                ?.split(",")
+                .map((field) => {
+                  const trimmedField = field.trim();
+                  const isDate = trimmedField.toLowerCase().includes("date");
+
+                  return (
+                    <FormControl key={trimmedField}>
+                      <FormLabel fontWeight="medium">
+                        {trimmedField} <span style={{ color: 'red' }}>*</span>
+                      </FormLabel>
+                      <Input
+                        type={isDate ? "date" : "text"}
+                        placeholder={`Enter ${trimmedField}`}
+                        value={transitionFormData[trimmedField] || ""}
+                        onChange={(e) =>
+                          setTransitionFormData((prev) => ({
+                            ...prev,
+                            [trimmedField]: e.target.value,
+                          }))
+                        }
+                      />
+                    </FormControl>
+                  );
+                })}
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button
+              colorScheme="blue"
+              mr={3}
+              onClick={() => {
+                const requiredFields = transitionPopupData?.requiredFields
+                  ?.split(",")
+                  .map((f) => f.trim()) || [];
+
+                const isFormValid = requiredFields.every(
+                  (field) => transitionFormData[field]
+                );
+
+                if (!isFormValid) {
+                  toast.error("Please fill all required fields.");
+                  return;
+                }
+
+                console.log("Form Submitted:", transitionFormData);
+                setIsTransitionPopupOpen(false);
+                handleStatusChange(transitionPopupData?.toStatus);
+              }}
+            >
+              Submit
+            </Button>
+            <Button variant="ghost" onClick={() => setIsTransitionPopupOpen(false)}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+
+
     </Box>
+
   );
 }

@@ -8,7 +8,8 @@ import axios from "axios";
 
 export default function Projects({ gridColumn }) {
   const [tasks, setTasks] = useState([]);
-
+  const userData = JSON.parse(sessionStorage.getItem("userData"));
+  
   // Chakra Color Mode
   const textColorPrimary = useColorModeValue("secondaryGray.900", "white");
   const textColorSecondary = "gray.400";
@@ -21,7 +22,7 @@ export default function Projects({ gridColumn }) {
     const fetchTasks = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:8080/api/tasks?assignee=saurav.kumar10"
+          `http://localhost:8080/api/tasks?assignee=${userData.username}`
         );
         setTasks(response.data);
       } catch (error) {
