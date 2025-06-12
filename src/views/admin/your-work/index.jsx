@@ -383,6 +383,7 @@ function getISTDateTime() {
       .catch((error) => {
         console.error("Error fetching issue details:", error);
       });
+      fetchComments();
   }, [id]);
   const [accordionFields, setAccordionFields] = useState({
     assignee: "",
@@ -1011,7 +1012,7 @@ function getISTDateTime() {
             {transitionPopupData?.toStatus} - Required Fields
           </ModalHeader>
           <ModalCloseButton />
-          <ModalBody>
+          {/* <ModalBody>
             {previewFile?.mimeType === "application/pdf" ? (
               <iframe
                 src={previewFile.blobUrl}
@@ -1029,8 +1030,36 @@ function getISTDateTime() {
             ) : (
               <Text>Preview not available for this file type.</Text>
             )}
-          </ModalBody>
+          </ModalBody> */}
+        <ModalBody>
+            <VStack spacing={5} align="stretch">
+              {transitionPopupData?.requiredFields
+                ?.split(",")
+                .map((field) => {
+                  const trimmedField = field.trim();
+                  const isDate = trimmedField.toLowerCase().includes("date");
 
+                  return (
+                    <FormControl key={trimmedField}>
+                      <FormLabel fontWeight="medium">
+                        {trimmedField} <span style={{ color: 'red' }}>*</span>
+                      </FormLabel>
+                      <Input
+                        type={isDate ? "date" : "text"}
+                        placeholder={`Enter ${trimmedField}`}
+                        value={transitionFormData[trimmedField] || ""}
+                        onChange={(e) =>
+                          setTransitionFormData((prev) => ({
+                            ...prev,
+                            [trimmedField]: e.target.value,
+                          }))
+                        }
+                      />
+                    </FormControl>
+                  );
+                })}
+            </VStack>
+          </ModalBody>
           <ModalFooter>
             <Button
               colorScheme="blue"
