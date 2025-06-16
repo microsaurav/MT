@@ -1,4 +1,4 @@
- import './assets/css/App.css';
+import './assets/css/App.css';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ChakraProvider } from '@chakra-ui/react';
 import initialTheme from './theme/theme'; // Your theme file
@@ -13,7 +13,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 function Main() {
   const [currentTheme, setCurrentTheme] = useState(initialTheme);
-  
+
   return (
     <ChakraProvider theme={currentTheme}>
       <Navbar />
@@ -24,7 +24,7 @@ function Main() {
       />
       <Routes>
         <Route path="auth/*" element={<AuthLayout />} />
-        
+
         <Route
           path="admin/*"
           element={<AdminLayout theme={currentTheme} setTheme={setCurrentTheme} />}

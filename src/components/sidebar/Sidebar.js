@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 
 // chakra imports
 import {
@@ -12,6 +12,7 @@ import {
   useDisclosure,
   DrawerContent,
   DrawerCloseButton,
+  IconButton
 } from "@chakra-ui/react";
 import Content from "components/sidebar/components/Content";
 import {
@@ -26,7 +27,7 @@ import PropTypes from "prop-types";
 import { IoMenuOutline } from "react-icons/io5";
 
 function Sidebar(props) {
-  const { routes } = props;
+  const { routes, collapsed, setCollapsed } = props;
 
   let variantChange = "0.2s linear";
   let shadow = useColorModeValue(
@@ -40,13 +41,35 @@ function Sidebar(props) {
   // Filter out routes with showInSidebar: false before passing to Content
   const filteredRoutes = routes.filter((route) => route.showInSidebar !== false);
 
+  const hoverTimeout = useRef();
+
+  const handleSidebarMouseEnter = () => {
+    clearTimeout(hoverTimeout.current);
+    setCollapsed && setCollapsed(false);
+  };
+
+  const handleSidebarMouseLeave = () => {
+    clearTimeout(hoverTimeout.current);
+    setCollapsed && setCollapsed(true);
+  }
+
   // SIDEBAR
   return (
-    <Box display={{ sm: "none", xl: "block" }} w="100%" position="fixed" minH="100%">
+    // Update: Setting size of sidebar
+    <Box
+      display={{ sm: "none", xl: "block" }} w="100%"
+      position="fixed"
+      minH="100%"
+      top="60px"
+      height="calc(100vh - 60px)"
+      onMouseEnter={handleSidebarMouseEnter} // Update: show sidebar on mouse enter
+      onMouseLeave={handleSidebarMouseLeave} // Update: hide sidebar on mouse leave
+      z-index="999"
+    >
       <Box
         bg={sidebarBg}
         transition={variantChange}
-        w="300px"
+        w={collapsed ? "80px" : "300px"}
         h="100vh"
         m={sidebarMargins}
         minH="100%"
@@ -59,7 +82,8 @@ function Sidebar(props) {
           renderThumbVertical={renderThumb}
           renderView={renderView}
         >
-          <Content routes={filteredRoutes} />
+          {/* Update: Passing collapsed state prop to Content */}
+          <Content routes={filteredRoutes} collapsed={collapsed} />
         </Scrollbars>
       </Box>
     </Box>

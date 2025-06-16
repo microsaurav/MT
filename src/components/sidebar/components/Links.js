@@ -16,7 +16,7 @@ export function SidebarLinks(props) {
   let textColor = useColorModeValue("secondaryGray.500", "white");
   let brandColor = useColorModeValue("brand.500", "brand.400");
 
-  const { routes } = props;
+  const { routes, collapsed } = props;
 
   // verifies if routeName is the one active (in browser input)
   const activeRoute = (routeName) => {
@@ -40,7 +40,9 @@ export function SidebarLinks(props) {
               }}
               pt='18px'
               pb='12px'
-              key={index}>
+              key={index}
+              display={collapsed ? "none" : "block"}
+            >
               {route.name}
             </Text>
             {createLinks(route.items)}
@@ -71,20 +73,22 @@ export function SidebarLinks(props) {
                       me='18px'>
                       {route.icon}
                     </Box>
-                    <Text
-                      me='auto'
-                      color={
-                        activeRoute(route.path.toLowerCase())
-                          ? activeColor
-                          : textColor
-                      }
-                      fontWeight={
-                        activeRoute(route.path.toLowerCase())
-                          ? "bold"
-                          : "normal"
-                      }>
-                      {route.name}
-                    </Text>
+                    {!collapsed && (
+                      <Text
+                        me='auto'
+                        color={
+                          activeRoute(route.path.toLowerCase())
+                            ? activeColor
+                            : textColor
+                        }
+                        fontWeight={
+                          activeRoute(route.path.toLowerCase())
+                            ? "bold"
+                            : "normal"
+                        }>
+                        {route.name}
+                      </Text>
+                    )}
                   </Flex>
                   <Box
                     h='36px'
@@ -106,18 +110,20 @@ export function SidebarLinks(props) {
                   }
                   py='5px'
                   ps='10px'>
-                  <Text
-                    me='auto'
-                    color={
-                      activeRoute(route.path.toLowerCase())
-                        ? activeColor
-                        : inactiveColor
-                    }
-                    fontWeight={
-                      activeRoute(route.path.toLowerCase()) ? "bold" : "normal"
-                    }>
-                    {route.name}
-                  </Text>
+                  {!collapsed && (
+                    <Text
+                      me='auto'
+                      color={
+                        activeRoute(route.path.toLowerCase())
+                          ? activeColor
+                          : inactiveColor
+                      }
+                      fontWeight={
+                        activeRoute(route.path.toLowerCase()) ? "bold" : "normal"
+                      }>
+                      {route.name}
+                    </Text>
+                  )}
                   <Box h='36px' w='4px' bg='brand.400' borderRadius='5px' />
                 </HStack>
               </Box>
