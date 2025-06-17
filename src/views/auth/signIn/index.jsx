@@ -52,17 +52,56 @@ function SignIn() {
 
   const handleClick = () => setShow(!show);
 
+  // const handleSignIn = async () => {
+  //   setError(""); // Clear previous error
+  //   try {
+  //     const response = await axios.get(
+  //       `http://localhost:8080/api/User/GetUserDetailsbyemail/${email}`
+  //     );
+
+  //     if (response.data.length>0) {
+  //       const userData = response.data[0];
+  //       if (password === "HING") {
+  //         sessionStorage.setItem("userData", JSON.stringify(userData));
+  //         navigate("/admin");
+  //       } else {
+  //         toast.error("Invalid password. Please try again.");
+  //       }
+  //     } else {
+  //       toast.error("User not found.");
+  //     }
+  //   } catch (err) {
+  //     toast.error("User not found or server error.");
+  //     console.error(err);
+  //   }
+  // };
   const handleSignIn = async () => {
     setError(""); // Clear previous error
     try {
       const response = await axios.get(
         `http://localhost:8080/api/User/GetUserDetailsbyemail/${email}`
       );
-
-      if (response.data.length>0) {
+  
+      if (response.data.length > 0) {
         const userData = response.data[0];
+  
         if (password === "HING") {
           sessionStorage.setItem("userData", JSON.stringify(userData));
+  
+          // Fetch master data and store it
+          const masterResponse = await axios.get("http://localhost:8080/api/master/getAllCategory");
+          const masterData = masterResponse.data;
+  
+          // Group by category
+          const groupedData = masterData.reduce((acc, item) => {
+            if (!acc[item.category]) acc[item.category] = [];
+            acc[item.category].push(item.node);
+            return acc;
+          }, {});
+  
+          sessionStorage.setItem("masterData", JSON.stringify(groupedData));
+  
+          // Navigate after everything is stored
           navigate("/admin");
         } else {
           toast.error("Invalid password. Please try again.");
@@ -75,6 +114,7 @@ function SignIn() {
       console.error(err);
     }
   };
+  
 
   return (
     <DefaultAuth illustrationBackground={illustration} image={illustration}>

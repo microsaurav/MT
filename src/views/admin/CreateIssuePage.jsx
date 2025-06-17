@@ -12,12 +12,12 @@ import {
   Flex,
   Icon,
   useDisclosure,
- 
+
 } from '@chakra-ui/react';
 import Multiselect from 'multiselect-react-dropdown';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import the default styles
-import { MdCheckCircle} from 'react-icons/md';
+import { MdCheckCircle } from 'react-icons/md';
 import Card from 'components/card/Card'; // Your custom Card component
 import { useNavigate } from 'react-router-dom';
 
@@ -56,23 +56,38 @@ export default function CreateIssueModal() {
     gtmplanNeeded: false,
     justification: ''
   });
-  
+
   const { isOpen, onOpen, onClose } = useDisclosure();
   const bgColor = useColorModeValue("gray.50", "gray.800");
   const textColor = useColorModeValue('secondaryGray.900', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
   const navigate = useNavigate();
+  const masterData = JSON.parse(sessionStorage.getItem("masterData"));
+  console.log("Master Data is populated as", masterData)
+  const moduleOptions = (masterData?.Module || []).map((mod) => ({
+    value: mod,
+    label: mod,
+  }));
+  const workTypeOptions = masterData?.WorkType || [];
+  const businessOwnerOptions = masterData?.["Business Owner"] || [];
+  const workstreamStreamAndBusinessFunctionOptions = masterData?.["Workstream And Business Function"] || [];
+  const priorityOptions = masterData?.Priority || [];
+  const severityOptions = masterData?.Severity || [];
+  const environmnetOptions = masterData?.Environment || [];
+  const defectTypeOptions = masterData?.["Defect Type"] || [];
+  const primaryApplicationOptions = masterData?.["Primary Application"] || [];
+
   // Handling form submission
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
       const response = await fetch('http://localhost:8080/api/PostIssuedetails', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(issueData),
       });
-  
+
       if (response.ok) {
         const result = await response.json();
         toast.success(`Issue Created Successfully with ID: ${result.issueId}`);
@@ -85,9 +100,9 @@ export default function CreateIssueModal() {
       toast.error('Network error:', error);
     }
   };
-  
+
   // Options for the dropdown
-  
+
   // Handling tags addition
   const handleAddTag = (e) => {
     if (e.key === 'Enter' && e.target.value.trim() !== '') {
@@ -105,10 +120,10 @@ export default function CreateIssueModal() {
       tags: prevData.tags.filter((tag) => tag !== tagToRemove),
     }));
   };
-console.log("IssueData",issueData.project)
+  console.log("IssueData", issueData.project)
   return (
     <Box pt={{ base: '130px', md: '80px', xl: '80px' }}>
-      
+
       <Card
         flexDirection="column"
         w="100%"
@@ -117,35 +132,35 @@ console.log("IssueData",issueData.project)
         overflow="hidden"
       >
         <Box>
-        <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
-      <FormControl isRequired>
-        <FormLabel htmlFor="project" color="gray.400">
-          Project
-        </FormLabel>
-        <Select
-          id="projectName"
-          value={issueData.projectName}
-          onChange={(e) =>
-            setIssueData({ ...issueData, projectName: e.target.value })
-          }
-          borderColor={borderColor}
-          textColor={textColor}
-          _hover={{ borderColor: 'brandScheme.400' }}
-          _focus={{ borderColor: 'brandScheme.400' }}
-          backgroundColor={bgColor}
-        >
-          <option value="" disabled>
-            Select an Option
-          </option>
-          <option value="ABHI Change Request Management">
-            ABHI Change Request Management
-          </option>
-          {/* <option value="Prodcution">ABHI Products Defect Management</option> */}
-        </Select>
-      </FormControl>
+          <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+            <FormControl isRequired>
+              <FormLabel htmlFor="project" color="gray.400">
+                Project
+              </FormLabel>
+              <Select
+                id="projectName"
+                value={issueData.projectName}
+                onChange={(e) =>
+                  setIssueData({ ...issueData, projectName: e.target.value })
+                }
+                borderColor={borderColor}
+                textColor={textColor}
+                _hover={{ borderColor: 'brandScheme.400' }}
+                _focus={{ borderColor: 'brandScheme.400' }}
+                backgroundColor={bgColor}
+              >
+                <option value="" disabled>
+                  Select an Option
+                </option>
+                <option value="ABHI Change Request Management">
+                  ABHI Change Request Management
+                </option>
+                {/* <option value="Prodcution">ABHI Products Defect Management</option> */}
+              </Select>
+            </FormControl>
 
-      <FormControl isRequired>
-        <FormLabel htmlFor="severity" color="gray.400">
+            <FormControl isRequired>
+              {/* <FormLabel htmlFor="severity" color="gray.400">
           Issue Type
         </FormLabel>
         <Select
@@ -167,13 +182,48 @@ console.log("IssueData",issueData.project)
           <option value="BAU">BAU Projects</option>
           <option style={{color: "#D3D3D3"}} disabled value="Service Request">Service Request</option>
           <option style={{color: "#D3D3D3"}}disabled value="Bug">Bug</option>
-        </Select>
-      </FormControl>
-    </SimpleGrid>
+        </Select> */}
+
+              <FormLabel htmlFor="issueType" color="gray.400">
+                Issue Type
+              </FormLabel>
+              <Select
+                id="issueType"
+                value={issueData.issueType}
+                onChange={(e) =>
+                  setIssueData({ ...issueData, issueType: e.target.value })
+                }
+                borderColor={borderColor}
+                _hover={{ borderColor: 'brandScheme.400' }}
+                _focus={{ borderColor: 'brandScheme.400' }}
+                backgroundColor={bgColor}
+              >
+                <option value="" disabled>
+                  Select an option
+                </option>
+                {workTypeOptions.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+
+                {/* Optional: greyed out disabled static options */}
+                {/* <option style={{ color: "#D3D3D3" }} disabled value="Service Request">
+    Service Request
+  </option>
+  <option style={{ color: "#D3D3D3" }} disabled value="Bug">
+    Bug
+  </option> */}
+              </Select>
+
+            </FormControl>
+          </SimpleGrid>
           {issueData.projectName === 'ABHI Change Request Management' &&
-            (issueData.issueType === 'CR' ||
+            (issueData.issueType === 'Change Request' ||
               issueData.issueType === 'Project' ||
-              issueData.issueType === 'BAU'||issueData.issueType === 'Service Request' ) && (
+              issueData.issueType === 'BAU Project' || issueData.issueType === 'Service Request'
+              || issueData.issueType === 'Epic'
+            ) && (
               <>
                 <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
                   {/* Issue Type */}
@@ -203,7 +253,7 @@ console.log("IssueData",issueData.project)
                 <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
                   <FormControl isRequired>
                     <FormLabel htmlFor="severity" color="gray.400">
-                      Business owner/Project Owner
+                      Business owner
                     </FormLabel>
                     <Select
                       id="severity"
@@ -215,17 +265,16 @@ console.log("IssueData",issueData.project)
                       backgroundColor={bgColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                      
+
                     >
-                      <option value="Claims">Claims</option>
-                      <option value="Contact Center">Contact Center</option>
-                      <option value="Digital">Digital</option>
-                      <option value="DOPs">DOPs</option>
-                      <option value="Embedded Wellness">Embedded Wellness</option>
-                      <option value="Finance">Finance</option>
-                      <option value="FinOps">FinOps</option>
-                      <option value="FWA">FWA</option>
-                      <option value="Group Operation">Group Operation</option>
+                      <option value="" disabled>
+                        Select an option
+                      </option>
+                      {businessOwnerOptions.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
                     </Select>
                   </FormControl>
                 </SimpleGrid>
@@ -248,7 +297,7 @@ console.log("IssueData",issueData.project)
 
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
-                     backgroundColor={bgColor}
+                      backgroundColor={bgColor}
                       resize="none"
                       minHeight="20px"
                     />
@@ -257,7 +306,7 @@ console.log("IssueData",issueData.project)
                 <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
                   <FormControl isRequired>
                     <FormLabel htmlFor="issueDescription" color="gray.400">
-                      Issue Description
+                      Description
                     </FormLabel>
                     <Textarea
                       id="description"
@@ -277,12 +326,12 @@ console.log("IssueData",issueData.project)
                       minHeight="150px"
                     />
                   </FormControl>
-                  <SimpleGrid
+                  {/* <SimpleGrid
                     columns={{ sm: 1, md: 1 }}
                     spacing="20px"
                     mb="24px"
                   >
-                    {/* Issue Type */}
+                    
                     <FormControl isRequired>
                       <FormLabel htmlFor="issueType" color="gray.400">
                         In Scope
@@ -304,8 +353,8 @@ console.log("IssueData",issueData.project)
                         minHeight="90px"
                       />
                     </FormControl>
-                  </SimpleGrid>
-                  <SimpleGrid
+                  </SimpleGrid> */}
+                  {/* <SimpleGrid
                     columns={{ sm: 1, md: 1 }}
                     spacing="20px"
                     mb="24px"
@@ -331,7 +380,7 @@ console.log("IssueData",issueData.project)
                         minHeight="90px"
                       />
                     </FormControl>
-                  </SimpleGrid>
+                  </SimpleGrid> */}
 
                   <FormControl isRequired>
                     <FormLabel htmlFor="priority" color="gray.400">
@@ -348,9 +397,14 @@ console.log("IssueData",issueData.project)
                       _focus={{ borderColor: 'brandScheme.400' }}
                       backgroundColor={bgColor}
                     >
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
+                      <option value="" disabled>
+                        Select an option
+                      </option>
+                      {priorityOptions.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
                     </Select>
                   </FormControl>
                 </SimpleGrid>
@@ -387,211 +441,200 @@ console.log("IssueData",issueData.project)
                       _focus={{ borderColor: 'brandScheme.400' }}
                       backgroundColor={bgColor}
                     >
-                      <option value="" disabled selected>
+                      <option value="" disabled>
                         Select an option
                       </option>
-                      <option value="Product & Pricing">Product & Pricing</option>
-                      <option value="Digital">Digital</option>
-                      <option value="Operation">Operation</option>
-                      <option value="Sales">Sales</option>
-                      <option value="Marketing">Marketing</option>
-                      <option value="Legal">Legal</option>
-                      <option value="Finance">Finance</option>
-                      <option value="IT">IT</option>
+                      {workstreamStreamAndBusinessFunctionOptions.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
                     </Select>
                   </FormControl>
                 </SimpleGrid>
                 <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
                   {/* Assignee */}
                   <FormControl>
-  <FormLabel htmlFor="module" color="gray.400">
-    Module (Multi-select)
-  </FormLabel>
-  <Multiselect
-    placeholder="Select an Option"
-    options={[
-      { value: 'active', label: 'Active Days' },
-      { value: 'claims', label: 'Claims' },
-      { value: 'digital', label: 'Digital Health Assessment' },
-    ]}
-    displayValue="label"
-    selectedValues={
-      issueData.module
-        ? issueData.module.split(',').map((val) => ({
-            value: val,
-            label:
-              val === 'active'
-                ? 'Active Days'
-                : val === 'claims'
-                ? 'Claims'
-                : 'Digital Health Assessment',
-          }))
-        : []
-    }
-    onSelect={(selectedList) =>
-      setIssueData({
-        ...issueData,
-        module: selectedList.map((item) => item.value).join(','),
-      })
-    }
-    onRemove={(selectedList) =>
-      setIssueData({
-        ...issueData,
-        module: selectedList.map((item) => item.value).join(','),
-      })
-    }
-    style={{
-      control: {
-        borderColor: borderColor,
-        backgroundColor: 'white',
-        padding: '10px 12px',
-        borderRadius: '8px',
-        fontSize: '16px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        transition: 'border-color 0.2s ease',
-      },
-      optionContainer: {
-        borderRadius: '8px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        marginTop: '8px',
-        zIndex: 999,
-        backgroundColor: '#f9f9f9',
-        maxHeight: '200px',
-        overflowY: 'auto',
-      },
-      option: {
-        padding: '10px',
-        fontSize: '14px',
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        color: '#333',
-      },
-      selectedList: {
-        padding: '4px 10px',
-        backgroundColor: '#007bff',
-        borderRadius: '8px',
-        marginRight: '8px',
-        fontSize: '14px',
-        display: 'inline-block',
-        marginBottom: '4px',
-        color: '#fff',
-      },
-      chip: {
-        backgroundColor: '#007bff',
-        fontSize: '14px',
-        color: '#fff',
-        padding: '6px 12px',
-        borderRadius: '16px',
-        margin: '2px',
-      },
-    }}
-  />
-</FormControl>
+                    <FormLabel htmlFor="module" color="gray.400">
+                      Module (Multi-select)
+                    </FormLabel>
+                    <Multiselect
+                      placeholder="Select an Option"
+                      options={moduleOptions}
+                      displayValue="label"
+                      selectedValues={
+                        issueData.module
+                          ? issueData.module.split(',').map((val) => ({
+                            value: val,
+                            label: val,
+                          }))
+                          : []
+                      }
+                      onSelect={(selectedList) =>
+                        setIssueData({
+                          ...issueData,
+                          module: selectedList.map((item) => item.value).join(','),
+                        })
+                      }
+                      onRemove={(selectedList) =>
+                        setIssueData({
+                          ...issueData,
+                          module: selectedList.map((item) => item.value).join(','),
+                        })
+                      }
+                      style={{
+                        control: {
+                          borderColor: borderColor,
+                          backgroundColor: 'white',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                          transition: 'border-color 0.2s ease',
+                        },
+                        optionContainer: {
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                          marginTop: '8px',
+                          zIndex: 999,
+                          backgroundColor: '#f9f9f9',
+                          maxHeight: '200px',
+                          overflowY: 'auto',
+                        },
+                        option: {
+                          padding: '10px',
+                          fontSize: '14px',
+                          backgroundColor: 'white',
+                          borderRadius: '8px',
+                          color: '#333',
+                        },
+                        selectedList: {
+                          padding: '4px 10px',
+                          backgroundColor: '#007bff',
+                          borderRadius: '8px',
+                          marginRight: '8px',
+                          fontSize: '14px',
+                          display: 'inline-block',
+                          marginBottom: '4px',
+                          color: '#fff',
+                        },
+                        chip: {
+                          backgroundColor: '#007bff',
+                          fontSize: '14px',
+                          color: '#fff',
+                          padding: '6px 12px',
+                          borderRadius: '16px',
+                          margin: '2px',
+                        },
+                      }}
+                    />
+
+                  </FormControl>
 
                 </SimpleGrid>
                 <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
                   {/* Assignee */}
                   <FormControl>
-  <FormLabel htmlFor="businessNeed" color="gray.400">
-    Business Need (Multi-select)
-  </FormLabel>
-  <Multiselect
-    placeholder="Select an Option"
-    options={[
-      { value: 'Audit Observation', label: 'Audit Observation' },
-      { value: 'Cost Reduction/Avoidence', label: 'Cost Reduction/Avoidence' },
-      { value: 'Customer Experience', label: 'Customer Experience' },
-      { value: 'Customer OnBoarding', label: 'Customer OnBoarding' },
-      { value: 'Distributor Experience', label: 'Distributor Experience' },
-      { value: 'Employee Experience', label: 'Employee Experience' },
-      { value: 'Operation Efficiency', label: 'Operation Efficiency' },
-      { value: 'Partner On-Boarding', label: 'Partner On-Boarding' },
-      { value: 'Regulatory', label: 'Regulatory' },
-      { value: 'Revenue Generation', label: 'Revenue Generation' },
-      { value: 'Risk Management', label: 'Risk Management' },
-      { value: 'Tech Scalability', label: 'Tech Scalability' },
-    ]}
-    displayValue="label"
-    selectedValues={
-      issueData.businessNeed
-        ? issueData.businessNeed.split(',').map((val) => {
-            const option = [
-              { value: 'audit', label: 'Audit Observation' },
-              { value: 'cost', label: 'Cost Reduction/Avoidence' },
-              { value: 'customer', label: 'Customer Experience' },
-              { value: 'customer On_boarding', label: 'Customer OnBoarding' },
-              { value: 'distributor', label: 'Distributor Experience' },
-              { value: 'employee', label: 'Employee Experience' },
-              { value: 'operation', label: 'Operation Efficiency' },
-              { value: 'partner', label: 'Partner On-Boarding' },
-              { value: 'regulatory', label: 'Regulatory' },
-              { value: 'revenue', label: 'Revenue Generation' },
-              { value: 'risk management', label: 'Risk Management' },
-              { value: 'tech', label: 'Tech Scalability' },
-            ].find((o) => o.value === val);
-            return option || { value: val, label: val };
-          })
-        : []
-    }
-    onSelect={(selectedList) =>
-      setIssueData({
-        ...issueData,
-        businessNeed: selectedList.map((item) => item.value).join(','),
-      })
-    }
-    onRemove={(selectedList) =>
-      setIssueData({
-        ...issueData,
-        businessNeed: selectedList.map((item) => item.value).join(','),
-      })
-    }
-    style={{
-      control: {
-        borderColor: borderColor,
-        backgroundColor: 'white',
-        padding: '10px 12px',
-        borderRadius: '8px',
-        fontSize: '16px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        transition: 'border-color 0.2s ease',
-      },
-      optionContainer: {
-        borderRadius: '8px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        marginTop: '8px',
-        zIndex: 999,
-        backgroundColor: '#f9f9f9',
-        maxHeight: '200px',
-        overflowY: 'auto',
-      },
-      option: {
-        padding: '10px',
-        fontSize: '14px',
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        color: '#333',
-      },
-      selectedList: {
-        padding: '4px 10px',
-        backgroundColor: '#007bff',
-        borderRadius: '8px',
-        marginRight: '8px',
-        fontSize: '14px',
-        display: 'inline-block',
-        marginBottom: '4px',
-        color: '#fff',
-      },
-      chip: {
-        backgroundColor: '#007bff',
-        fontSize: '14px',
-        color: '#fff',
-        padding: '6px 12px',
-        borderRadius: '16px',
-        margin: '2px',
-      },
-    }}
-  />
-</FormControl>
+                    <FormLabel htmlFor="businessNeed" color="gray.400">
+                      Business Need (Multi-select)
+                    </FormLabel>
+                    <Multiselect
+                      placeholder="Select an Option"
+                      options={[
+                        { value: 'Audit Observation', label: 'Audit Observation' },
+                        { value: 'Cost Reduction/Avoidence', label: 'Cost Reduction/Avoidence' },
+                        { value: 'Customer Experience', label: 'Customer Experience' },
+                        { value: 'Customer OnBoarding', label: 'Customer OnBoarding' },
+                        { value: 'Distributor Experience', label: 'Distributor Experience' },
+                        { value: 'Employee Experience', label: 'Employee Experience' },
+                        { value: 'Operation Efficiency', label: 'Operation Efficiency' },
+                        { value: 'Partner On-Boarding', label: 'Partner On-Boarding' },
+                        { value: 'Regulatory', label: 'Regulatory' },
+                        { value: 'Revenue Generation', label: 'Revenue Generation' },
+                        { value: 'Risk Management', label: 'Risk Management' },
+                        { value: 'Tech Scalability', label: 'Tech Scalability' },
+                      ]}
+                      displayValue="label"
+                      selectedValues={
+                        issueData.businessNeed
+                          ? issueData.businessNeed.split(',').map((val) => {
+                            const option = [
+                              { value: 'audit', label: 'Audit Observation' },
+                              { value: 'cost', label: 'Cost Reduction/Avoidence' },
+                              { value: 'customer', label: 'Customer Experience' },
+                              { value: 'customer On_boarding', label: 'Customer OnBoarding' },
+                              { value: 'distributor', label: 'Distributor Experience' },
+                              { value: 'employee', label: 'Employee Experience' },
+                              { value: 'operation', label: 'Operation Efficiency' },
+                              { value: 'partner', label: 'Partner On-Boarding' },
+                              { value: 'regulatory', label: 'Regulatory' },
+                              { value: 'revenue', label: 'Revenue Generation' },
+                              { value: 'risk management', label: 'Risk Management' },
+                              { value: 'tech', label: 'Tech Scalability' },
+                            ].find((o) => o.value === val);
+                            return option || { value: val, label: val };
+                          })
+                          : []
+                      }
+                      onSelect={(selectedList) =>
+                        setIssueData({
+                          ...issueData,
+                          businessNeed: selectedList.map((item) => item.value).join(','),
+                        })
+                      }
+                      onRemove={(selectedList) =>
+                        setIssueData({
+                          ...issueData,
+                          businessNeed: selectedList.map((item) => item.value).join(','),
+                        })
+                      }
+                      style={{
+                        control: {
+                          borderColor: borderColor,
+                          backgroundColor: 'white',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                          transition: 'border-color 0.2s ease',
+                        },
+                        optionContainer: {
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                          marginTop: '8px',
+                          zIndex: 999,
+                          backgroundColor: '#f9f9f9',
+                          maxHeight: '200px',
+                          overflowY: 'auto',
+                        },
+                        option: {
+                          padding: '10px',
+                          fontSize: '14px',
+                          backgroundColor: 'white',
+                          borderRadius: '8px',
+                          color: '#333',
+                        },
+                        selectedList: {
+                          padding: '4px 10px',
+                          backgroundColor: '#007bff',
+                          borderRadius: '8px',
+                          marginRight: '8px',
+                          fontSize: '14px',
+                          display: 'inline-block',
+                          marginBottom: '4px',
+                          color: '#fff',
+                        },
+                        chip: {
+                          backgroundColor: '#007bff',
+                          fontSize: '14px',
+                          color: '#fff',
+                          padding: '6px 12px',
+                          borderRadius: '16px',
+                          margin: '2px',
+                        },
+                      }}
+                    />
+                  </FormControl>
 
                   <FormControl>
                     <FormLabel htmlFor="tags" color="gray.400">
@@ -637,17 +680,14 @@ console.log("IssueData",issueData.project)
                     _focus={{ borderColor: 'brandScheme.400' }}
                     backgroundColor={bgColor}
                   >
-                    <option value="" disabled selected>
+                    <option value="" disabled>
                       Select an option
                     </option>
-                    <option value="Product & Pricing">Product & Pricing</option>
-                    <option value="Digital">Digital</option>
-                    <option value="Operation">Operation</option>
-                    <option value="Sales">Sales</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Legal">Legal</option>
-                    <option value="Finance">Finance</option>
-                    <option value="IT">IT</option>
+                    {workstreamStreamAndBusinessFunctionOptions.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
                   </Select>
                 </FormControl>
                 {/* Issue Type */}
@@ -666,13 +706,14 @@ console.log("IssueData",issueData.project)
                     _focus={{ borderColor: 'brandScheme.400' }}
                     backgroundColor={bgColor}
                   >
-                    <option value="" disabled selected>
+                    <option value="" disabled>
                       Select an option
                     </option>
-                    <option value="QA">QA Testing</option>
-                    <option value="Sanity Testing">Sanity Testing</option>
-                    <option value="Regression">Regression</option>
-                    <option value="UAT Testing">UAT Testing</option>
+                    {defectTypeOptions.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
                   </Select>
                 </FormControl>
               </SimpleGrid>
@@ -696,19 +737,14 @@ console.log("IssueData",issueData.project)
                     _focus={{ borderColor: 'brandScheme.400' }}
                     backgroundColor={bgColor}
                   >
-                    <option value="" disabled selected>
+                    <option value="" disabled>
                       Select an option
                     </option>
-                    <option value="Aarambh">Aarambh</option>
-                    <option value="ABHI Connect">ABHI Connect</option>
-                    <option value="ABHI ProviderPortal">
-                      ABHI ProviderPortal
-                    </option>
-                    <option value="ABHI Website">ABHI Website</option>
-                    <option value="Activ Health">Activ Health</option>
-                    <option value="Legal">Legal</option>
-                    <option value="Finance">Finance</option>
-                    <option value="IT">IT</option>
+                    {primaryApplicationOptions.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
                   </Select>
                 </FormControl>
                 {/* Issue Type */}
@@ -845,70 +881,84 @@ console.log("IssueData",issueData.project)
 
               </SimpleGrid> */}
               <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
-              <FormControl isRequired>
-                    <FormLabel htmlFor="priority" color="gray.400">
-                      Priority
-                    </FormLabel>
-                    <Select
-                      id="priority"
-                      value={issueData.priority}
-                      onChange={(e) =>
-                        setIssueData({ ...issueData, priority: e.target.value })
-                      }
-                      borderColor={borderColor}
-                      _hover={{ borderColor: 'brandScheme.400' }}
-                      _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor={bgColor}
-                    >
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                    </Select>
-                  </FormControl>
-                  <FormControl isRequired>
-                    <FormLabel htmlFor="severity" color="gray.400">
+                <FormControl isRequired>
+                  <FormLabel htmlFor="priority" color="gray.400">
+                    Priority
+                  </FormLabel>
+                  <Select
+                    id="priority"
+                    value={issueData.priority}
+                    onChange={(e) =>
+                      setIssueData({ ...issueData, priority: e.target.value })
+                    }
+                    borderColor={borderColor}
+                    _hover={{ borderColor: 'brandScheme.400' }}
+                    _focus={{ borderColor: 'brandScheme.400' }}
+                    backgroundColor={bgColor}
+                  >
+                    <option value="" disabled>
+                      Select an option
+                    </option>
+                    {priorityOptions.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl isRequired>
+                  <FormLabel htmlFor="severity" color="gray.400">
                     Severity
-                    </FormLabel>
-                    <Select
-                      id="severity"
-                      value={issueData.severity}
-                      onChange={(e) =>
-                        setIssueData({ ...issueData, severity: e.target.value })
-                      }
-                      borderColor={borderColor}
-                      _hover={{ borderColor: 'brandScheme.400' }}
-                      _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor={bgColor}
-                    >
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                    </Select>
-                  </FormControl>
-                </SimpleGrid>
-                <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
-              <FormControl isRequired>
-                    <FormLabel htmlFor="environment" color="gray.400">
-                      Environment
-                    </FormLabel>
-                    <Select
-                      id="environment"
-                      value={issueData.environment}
-                      onChange={(e) =>
-                        setIssueData({ ...issueData, environment: e.target.value })
-                      }
-                      borderColor={borderColor}
-                      _hover={{ borderColor: 'brandScheme.400' }}
-                      _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor={bgColor}
-                    >
-                      <option value="MIG">MIG</option>
-                      <option value="MT UAT">MT UAT</option>
-                      <option value="SIT">SIT</option>
-                      <option value="UAT">UAT</option>
-                    </Select>
-                  </FormControl>
-                  {/* <FormControl isRequired>
+                  </FormLabel>
+                  <Select
+                    id="severity"
+                    value={issueData.severity}
+                    onChange={(e) =>
+                      setIssueData({ ...issueData, severity: e.target.value })
+                    }
+                    borderColor={borderColor}
+                    _hover={{ borderColor: 'brandScheme.400' }}
+                    _focus={{ borderColor: 'brandScheme.400' }}
+                    backgroundColor={bgColor}
+                  >
+                    <option value="" disabled>
+                      Select an option
+                    </option>
+                    {severityOptions.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+              </SimpleGrid>
+              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+                <FormControl isRequired>
+                  <FormLabel htmlFor="environment" color="gray.400">
+                    Environment
+                  </FormLabel>
+                  <Select
+                    id="environment"
+                    value={issueData.environment}
+                    onChange={(e) =>
+                      setIssueData({ ...issueData, environment: e.target.value })
+                    }
+                    borderColor={borderColor}
+                    _hover={{ borderColor: 'brandScheme.400' }}
+                    _focus={{ borderColor: 'brandScheme.400' }}
+                    backgroundColor={bgColor}
+                  >
+                    <option value="" disabled>
+                      Select an option
+                    </option>
+                    {environmnetOptions.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+                {/* <FormControl isRequired>
                     <FormLabel htmlFor="severity" color="gray.400">
                     Severity
                     </FormLabel>
@@ -928,284 +978,280 @@ console.log("IssueData",issueData.project)
                       <option value="low">Low</option>
                     </Select>
                   </FormControl> */}
-                </SimpleGrid>
-                <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
-                  {/* Assignee */}
-                  <FormControl isRequired>
-  <FormLabel htmlFor="impactedSystems" color="gray.400">
-    Impacted-System (Multi-select)
-  </FormLabel>
-  <Multiselect
-    placeholder="Select an Option"
-    options={[
-      { value: 'active', label: 'Active Days' },
-      { value: 'claims', label: 'Claims' },
-      { value: 'Digital', label: 'Digital Health Assessment' },
-    ]}
-    displayValue="label"
-    selectedValues={
-      issueData.impactedSystems
-        ? issueData.impactedSystems.split(',').map((val) => {
-            const option = [
-              { value: 'Active', label: 'Active Days' },
-              { value: 'Claims', label: 'Claims' },
-              { value: 'Digital', label: 'Digital Health Assessment' },
-            ].find((o) => o.value === val);
-            return option || { value: val, label: val };
-          })
-        : []
-    }
-    onSelect={(selectedList) =>
-      setIssueData({
-        ...issueData,
-        impactedSystems: selectedList.map((item) => item.value).join(','),
-      })
-    }
-    onRemove={(selectedList) =>
-      setIssueData({
-        ...issueData,
-        impactedSystems: selectedList.map((item) => item.value).join(','),
-      })
-    }
-    style={{
-      control: {
-        borderColor: borderColor,
-        backgroundColor: 'white',
-        padding: '10px 12px',
-        borderRadius: '8px',
-        fontSize: '16px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        transition: 'border-color 0.2s ease',
-      },
-      optionContainer: {
-        borderRadius: '8px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        marginTop: '8px',
-        zIndex: 999,
-        backgroundColor: '#f9f9f9',
-        maxHeight: '200px',
-        overflowY: 'auto',
-      },
-      option: {
-        padding: '10px',
-        fontSize: '14px',
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        color: '#333',
-        '&:hover': {
-          backgroundColor: '#007bff',
-          color: '#fff',
-        },
-        '&:active': {
-          backgroundColor: '#0056b3',
-          color: '#fff',
-        },
-      },
-      selectedList: {
-        padding: '4px 10px',
-        backgroundColor: '#007bff',
-        borderRadius: '8px',
-        marginRight: '8px',
-        fontSize: '14px',
-        display: 'inline-block',
-        marginBottom: '4px',
-        color: '#fff',
-      },
-      chip: {
-        backgroundColor: '#007bff',
-        fontSize: '14px',
-        color: '#fff',
-        padding: '6px 12px',
-        borderRadius: '16px',
-        margin: '2px',
-      },
-    }}
-  />
-</FormControl>
+              </SimpleGrid>
+              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+                {/* Assignee */}
+                <FormControl isRequired>
+                  <FormLabel htmlFor="impactedSystems" color="gray.400">
+                    Impacted-System (Multi-select)
+                  </FormLabel>
+                  <Multiselect
+                    placeholder="Select an Option"
+                    options={[
+                      { value: 'active', label: 'Active Days' },
+                      { value: 'claims', label: 'Claims' },
+                      { value: 'Digital', label: 'Digital Health Assessment' },
+                    ]}
+                    displayValue="label"
+                    selectedValues={
+                      issueData.impactedSystems
+                        ? issueData.impactedSystems.split(',').map((val) => {
+                          const option = [
+                            { value: 'Active', label: 'Active Days' },
+                            { value: 'Claims', label: 'Claims' },
+                            { value: 'Digital', label: 'Digital Health Assessment' },
+                          ].find((o) => o.value === val);
+                          return option || { value: val, label: val };
+                        })
+                        : []
+                    }
+                    onSelect={(selectedList) =>
+                      setIssueData({
+                        ...issueData,
+                        impactedSystems: selectedList.map((item) => item.value).join(','),
+                      })
+                    }
+                    onRemove={(selectedList) =>
+                      setIssueData({
+                        ...issueData,
+                        impactedSystems: selectedList.map((item) => item.value).join(','),
+                      })
+                    }
+                    style={{
+                      control: {
+                        borderColor: borderColor,
+                        backgroundColor: 'white',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        transition: 'border-color 0.2s ease',
+                      },
+                      optionContainer: {
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        marginTop: '8px',
+                        zIndex: 999,
+                        backgroundColor: '#f9f9f9',
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                      },
+                      option: {
+                        padding: '10px',
+                        fontSize: '14px',
+                        backgroundColor: 'white',
+                        borderRadius: '8px',
+                        color: '#333',
+                        '&:hover': {
+                          backgroundColor: '#007bff',
+                          color: '#fff',
+                        },
+                        '&:active': {
+                          backgroundColor: '#0056b3',
+                          color: '#fff',
+                        },
+                      },
+                      selectedList: {
+                        padding: '4px 10px',
+                        backgroundColor: '#007bff',
+                        borderRadius: '8px',
+                        marginRight: '8px',
+                        fontSize: '14px',
+                        display: 'inline-block',
+                        marginBottom: '4px',
+                        color: '#fff',
+                      },
+                      chip: {
+                        backgroundColor: '#007bff',
+                        fontSize: '14px',
+                        color: '#fff',
+                        padding: '6px 12px',
+                        borderRadius: '16px',
+                        margin: '2px',
+                      },
+                    }}
+                  />
+                </FormControl>
 
-<FormControl>
-  <FormLabel htmlFor="module" color="gray.400">
-    Module (Multi-select)
-  </FormLabel>
-  <Multiselect
-    placeholder="Select an Option"
-    options={[
-      { value: 'active', label: 'Active Days' },
-      { value: 'claims', label: 'Claims' },
-      { value: 'Digital', label: 'Digital Health Assessment' },
-    ]}
-    displayValue="label"
-    selectedValues={
-      issueData.module
-        ? issueData.module.split(',').map((val) => ({
-            value: val,
-            label:
-              val === 'active'
-                ? 'Active Days'
-                : val === 'claims'
-                ? 'Claims'
-                : 'Digital Health Assessment',
-          }))
-        : []
-    }
-    onSelect={(selectedList) =>
-      setIssueData({
-        ...issueData,
-        module: selectedList.map((item) => item.value).join(','),
-      })
-    }
-    onRemove={(selectedList) =>
-      setIssueData({
-        ...issueData,
-        module: selectedList.map((item) => item.value).join(','),
-      })
-    }
-    style={{
-      control: {
-        borderColor: borderColor,
-        backgroundColor: 'white',
-        padding: '10px 12px',
-        borderRadius: '8px',
-        fontSize: '16px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        transition: 'border-color 0.2s ease',
-      },
-      optionContainer: {
-        borderRadius: '8px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        marginTop: '8px',
-        zIndex: 999,
-        backgroundColor: '#f9f9f9',
-        maxHeight: '200px',
-        overflowY: 'auto',
-      },
-      option: {
-        padding: '10px',
-        fontSize: '14px',
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        color: '#333',
-      },
-      selectedList: {
-        padding: '4px 10px',
-        backgroundColor: '#007bff',
-        borderRadius: '8px',
-        marginRight: '8px',
-        fontSize: '14px',
-        display: 'inline-block',
-        marginBottom: '4px',
-        color: '#fff',
-      },
-      chip: {
-        backgroundColor: '#007bff',
-        fontSize: '14px',
-        color: '#fff',
-        padding: '6px 12px',
-        borderRadius: '16px',
-        margin: '2px',
-      },
-    }}
-  />
-</FormControl>
+                <FormControl>
+                  <FormLabel htmlFor="module" color="gray.400">
+                    Module (Multi-select)
+                  </FormLabel>
+                  <Multiselect
+                    placeholder="Select an Option"
+                    options={moduleOptions}
+                    displayValue="label"
+                    selectedValues={
+                      issueData.module
+                        ? issueData.module.split(',').map((val) => ({
+                          value: val,
+                          label:
+                            val === 'active'
+                              ? 'Active Days'
+                              : val === 'claims'
+                                ? 'Claims'
+                                : 'Digital Health Assessment',
+                        }))
+                        : []
+                    }
+                    onSelect={(selectedList) =>
+                      setIssueData({
+                        ...issueData,
+                        module: selectedList.map((item) => item.value).join(','),
+                      })
+                    }
+                    onRemove={(selectedList) =>
+                      setIssueData({
+                        ...issueData,
+                        module: selectedList.map((item) => item.value).join(','),
+                      })
+                    }
+                    style={{
+                      control: {
+                        borderColor: borderColor,
+                        backgroundColor: 'white',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        transition: 'border-color 0.2s ease',
+                      },
+                      optionContainer: {
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        marginTop: '8px',
+                        zIndex: 999,
+                        backgroundColor: '#f9f9f9',
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                      },
+                      option: {
+                        padding: '10px',
+                        fontSize: '14px',
+                        backgroundColor: 'white',
+                        borderRadius: '8px',
+                        color: '#333',
+                      },
+                      selectedList: {
+                        padding: '4px 10px',
+                        backgroundColor: '#007bff',
+                        borderRadius: '8px',
+                        marginRight: '8px',
+                        fontSize: '14px',
+                        display: 'inline-block',
+                        marginBottom: '4px',
+                        color: '#fff',
+                      },
+                      chip: {
+                        backgroundColor: '#007bff',
+                        fontSize: '14px',
+                        color: '#fff',
+                        padding: '6px 12px',
+                        borderRadius: '16px',
+                        margin: '2px',
+                      },
+                    }}
+                  />
+                </FormControl>
 
-                  </SimpleGrid>
-                  <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
-                  {/* Assignee */}
-                  <FormControl>
-                    <FormLabel htmlFor="assignee" color="gray.400">
-                      Assignee
-                    </FormLabel>
-                    <Select
-                      id="assignee"
-                      value={issueData.assignee}
-                      onChange={(e) =>
-                        setIssueData({ ...issueData, assignee: e.target.value })
-                      }
-                      borderColor={borderColor}
-                      _hover={{ borderColor: 'brandScheme.400' }}
-                      _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor={bgColor}
-                    >
-                        <option value="" disabled selected>Select an Option</option>
-                      <option value="Saurav">Saurav Kumar</option>
-                      <option value="Akshita">Akshita Gupta</option>
-                      <option value="Om">Om Thange</option>
-                     
-                    </Select>
-                  </FormControl>
-                  </SimpleGrid>
-                  <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
-                  {/* Assignee */}
-                  <FormControl isRequired>
-                    <FormLabel htmlFor="actualOutput" color="gray.400">
-                     Actual Output
-                    </FormLabel>
-                    <Textarea
-                      id="actualOutput"
-                      value={issueData.actualOutput}
-                      onChange={(e) =>
-                        setIssueData({
-                          ...issueData,
-                          actualOutput: e.target.value,
-                        })
-                      }
-                      borderColor={borderColor}
-                      _hover={{ borderColor: 'brandScheme.400' }}
-                      _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor={bgColor}
-                      resize="none"
-                      minHeight="20px"
-                    />
-                  </FormControl>
-                  </SimpleGrid>
-                  <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
-                  {/* Assignee */}
-                  <FormControl isRequired>
-                    <FormLabel htmlFor="expectedOutput" color="gray.400">
-                     Expected Output
-                    </FormLabel>
-                    <Textarea
-                      id="expectedOutput"
-                      value={issueData.expectedOutput}
-                      onChange={(e) =>
-                        setIssueData({
-                          ...issueData,
-                          expectedOutput: e.target.value,
-                        })
-                      }
-                      borderColor={borderColor}
-                      _hover={{ borderColor: 'brandScheme.400' }}
-                      _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor={bgColor}
-                      resize="none"
-                      minHeight="20px"
-                    />
-                  </FormControl>
-                  </SimpleGrid>
-                  <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
-                  {/* Assignee */}
-                  <FormControl isRequired>
-                    <FormLabel htmlFor="noOfTestCaseImpacted" color="gray.400">
-                     Number of Test Cases impacted
-                    </FormLabel>
-                    <Textarea
-                      id="noOfTestCaseImpacted"
-                      value={issueData.noOfTestCaseImpacted}
-                      onChange={(e) =>
-                        setIssueData({
-                          ...issueData,
-                          noOfTestCaseImpacted: e.target.value,
-                        })
-                      }
-                      borderColor={borderColor}
-                      _hover={{ borderColor: 'brandScheme.400' }}
-                      _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor={bgColor}
-                      resize="none"
-                      minHeight="20px"
-                    />
-                  </FormControl>
-                  </SimpleGrid>
+              </SimpleGrid>
+              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+                {/* Assignee */}
+                <FormControl>
+                  <FormLabel htmlFor="assignee" color="gray.400">
+                    Assignee
+                  </FormLabel>
+                  <Select
+                    id="assignee"
+                    value={issueData.assignee}
+                    onChange={(e) =>
+                      setIssueData({ ...issueData, assignee: e.target.value })
+                    }
+                    borderColor={borderColor}
+                    _hover={{ borderColor: 'brandScheme.400' }}
+                    _focus={{ borderColor: 'brandScheme.400' }}
+                    backgroundColor={bgColor}
+                  >
+                    <option value="" disabled selected>Select an Option</option>
+                    <option value="Saurav">Saurav Kumar</option>
+                    <option value="Akshita">Akshita Gupta</option>
+                    <option value="Om">Om Thange</option>
+
+                  </Select>
+                </FormControl>
+              </SimpleGrid>
+              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+                {/* Assignee */}
+                <FormControl isRequired>
+                  <FormLabel htmlFor="actualOutput" color="gray.400">
+                    Actual Output
+                  </FormLabel>
+                  <Textarea
+                    id="actualOutput"
+                    value={issueData.actualOutput}
+                    onChange={(e) =>
+                      setIssueData({
+                        ...issueData,
+                        actualOutput: e.target.value,
+                      })
+                    }
+                    borderColor={borderColor}
+                    _hover={{ borderColor: 'brandScheme.400' }}
+                    _focus={{ borderColor: 'brandScheme.400' }}
+                    backgroundColor={bgColor}
+                    resize="none"
+                    minHeight="20px"
+                  />
+                </FormControl>
+              </SimpleGrid>
+              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+                {/* Assignee */}
+                <FormControl isRequired>
+                  <FormLabel htmlFor="expectedOutput" color="gray.400">
+                    Expected Output
+                  </FormLabel>
+                  <Textarea
+                    id="expectedOutput"
+                    value={issueData.expectedOutput}
+                    onChange={(e) =>
+                      setIssueData({
+                        ...issueData,
+                        expectedOutput: e.target.value,
+                      })
+                    }
+                    borderColor={borderColor}
+                    _hover={{ borderColor: 'brandScheme.400' }}
+                    _focus={{ borderColor: 'brandScheme.400' }}
+                    backgroundColor={bgColor}
+                    resize="none"
+                    minHeight="20px"
+                  />
+                </FormControl>
+              </SimpleGrid>
+              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+                {/* Assignee */}
+                <FormControl isRequired>
+                  <FormLabel htmlFor="noOfTestCaseImpacted" color="gray.400">
+                    Number of Test Cases impacted
+                  </FormLabel>
+                  <Textarea
+                    id="noOfTestCaseImpacted"
+                    value={issueData.noOfTestCaseImpacted}
+                    onChange={(e) =>
+                      setIssueData({
+                        ...issueData,
+                        noOfTestCaseImpacted: e.target.value,
+                      })
+                    }
+                    borderColor={borderColor}
+                    _hover={{ borderColor: 'brandScheme.400' }}
+                    _focus={{ borderColor: 'brandScheme.400' }}
+                    backgroundColor={bgColor}
+                    resize="none"
+                    minHeight="20px"
+                  />
+                </FormControl>
+              </SimpleGrid>
             </>
           )}
           <Flex justifyContent="end" mt="20px">
