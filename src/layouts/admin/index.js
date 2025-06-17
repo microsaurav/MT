@@ -94,20 +94,6 @@ export default function Dashboard(props) {
           setToggleSidebar,
         }}
       >
-        <Portal>
-          <Box>
-            <Navbar
-              collapsed={collapsed}
-              onOpen={onOpen}
-              logoText={'Horizon UI Dashboard PRO'}
-              brandText={getActiveRoute(routes)}
-              secondary={getActiveNavbar(routes)}
-              message={getActiveNavbarText(routes)}
-              fixed={fixed}
-              {...rest}
-            />
-          </Box>
-        </Portal>
         {/* Update: Passing `collapsed` and `setCollapsed` state to Sidebar */}
         <Sidebar
           routes={routes}
@@ -121,14 +107,14 @@ export default function Dashboard(props) {
           float="right"
           minHeight="100vh"
           height="100%"
-          overflowY="auto"
+          overflowY="hidden"
           position="relative"
           maxHeight="100%"
-          transition="all 0.33s cubic-bezier(0.685, 0.0473, 0.346, 1)"
+          transition=".2s linear"
+          transitionDelay='0s, 0s, 0s, 0s'
           transitionDuration=".2s, .2s, .35s"
-          // Update: take empty space when sidebar is collapsed
-          transitionProperty="top, bottom, width, margin" // update: added margin
-          transitionTimingFunction="linear, linear, ease-in-out"
+          transitionProperty="top, bottom, width, margin"
+          transitionTimingFunction="linear, linear, ease"
           w={{ base: '100%', xl: collapsed ? 'calc( 100% - 80px )' : 'calc( 100% - 300px )' }}
           maxWidth={{ base: '100%', xl: collapsed ? 'calc(100% - 80px)' : 'calc(100% - 290px)' }}
           pt={{ base: '40px', md: '50px', xl: '50px' }} // padding top for navbar 
@@ -138,6 +124,20 @@ export default function Dashboard(props) {
         //   xl: collapsed ? '80px' : '300px', // updated line
         // }}
         >
+          <Portal>
+            <Box>
+              <Navbar
+                collapsed={collapsed}
+                onOpen={onOpen}
+                logoText={'Horizon UI Dashboard PRO'}
+                brandText={getActiveRoute(routes)}
+                secondary={getActiveNavbar(routes)}
+                message={getActiveNavbarText(routes)}
+                fixed={fixed}
+                {...rest}
+              />
+            </Box>
+          </Portal>
           {getRoute() && (
             <Box
               mx="auto"

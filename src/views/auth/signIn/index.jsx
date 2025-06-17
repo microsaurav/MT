@@ -86,6 +86,7 @@ function SignIn() {
         h="100%"
         alignItems="start"
         justifyContent="center"
+        pt="50px"
         mb={{ base: "30px", md: "60px" }}
         px={{ base: "25px", md: "0px" }}
         mt={{ base: "2px", md: "3vh" }}
@@ -96,7 +97,7 @@ function SignIn() {
             Sign In
           </Heading>
           <Text
-            mb="36px"
+            mb="5px"
             ms="4px"
             color={textColorSecondary}
             fontWeight="400"

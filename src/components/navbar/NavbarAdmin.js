@@ -54,7 +54,7 @@ export default function AdminNavbar(props) {
 			borderRadius='16px'
 			borderWidth='1.5px'
 			borderStyle='solid'
-			transition="all 0.33s cubic-bezier(0.685, 0.0473, 0.346, 1)"
+			transition=".2s linear"
 			transitionDelay='0s, 0s, 0s, 0s'
 			transitionDuration=".2s, .2s, .35s"
 			transitionProperty="top, bottom, width, margin" // update: added margin
@@ -76,7 +76,7 @@ export default function AdminNavbar(props) {
 			ps={{
 				xl: '12px'
 			}}
-			pt='8px'
+			// pt='px'
 			top={{ base: '12px', md: '16px', lg: '20px', xl: '20px' }}
 			w={{
 				base: 'calc(100vw - 6%)',

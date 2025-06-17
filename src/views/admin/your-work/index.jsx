@@ -46,9 +46,11 @@ import {
   HStack, Divider,
   Tag,
   Icon,
-  Image
+  Image,
+  Heading
 } from "@chakra-ui/react";
 
+import './quillCustom.css';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import Popup from '../WorkflowPopupp';
@@ -62,6 +64,7 @@ import { ChevronDownIcon } from "@chakra-ui/icons";
 import { ArrowRightIcon } from "lucide-react"; // optional icon
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import the default styles
+import { MdOutlineAddComment } from 'react-icons/md';
 export default function Overview() {
 
   const [rows, setRows] = useState([]);
@@ -80,8 +83,10 @@ export default function Overview() {
   const [isTransitionPopupOpen, setIsTransitionPopupOpen] = useState(false);
   const [transitionPopupData, setTransitionPopupData] = useState(null);
   const [transitionFormData, setTransitionFormData] = useState({});
+  const [showEditor, setShowEditor] = useState(false);
+  const [value, setValue] = useState("");
   const userData = JSON.parse(sessionStorage.getItem("userData"));
-  console.log("userData", userData);  
+  console.log("userData", userData);
   const username = userData.username
   const addRow = () => {
     setRows([...rows, { value: "please add details", selectValue: "Option1" }]);
@@ -125,8 +130,6 @@ export default function Overview() {
     setRowsLinkIssue(updatedRows);
   };
 
-
-
   const [isOpen, setIsOpen] = useState(false);
 
 
@@ -167,45 +170,64 @@ export default function Overview() {
       .replace(/\s(.)/g, (match, group1) => group1.toUpperCase())
       .replace(/^(.)/, (match, group1) => group1.toLowerCase());
   }
-const fetchComments = async () => {
-  try {
-    const response = await axios.get(`http://localhost:8080/api/comments/getCommentByIssueId/${id}`);
-    const formatted = response.data.map((c) => ({
-      author: c.commentBy,
-      timestamp: new Date(c.timestamp).toLocaleString(),
-      text: c.comment,
-    }));
-    setComments(formatted);
-  } catch (error) {
-    console.error("Error fetching comments:", error);
-  }
-};
-
- const handleAddComment = async () => {
-  const editor = quillRef.current?.getEditor();
-  const commentText = editor?.getText()?.trim();
-  const commentHTML = editor?.root?.innerHTML?.trim();
-
-  if (!commentText) return;
-
-  const payload = {
-    issueId:id,
-    comment: commentHTML,
-    timestamp: getISTDateTime(),
-    commentBy: username,
+  const fetchComments = async () => {
+    try {
+      const response = await axios.get(`http://localhost:8080/api/comments/getCommentByIssueId/${id}`);
+      const formatted = response.data.map((c) => ({
+        author: c.commentBy,
+        timestamp: new Date(c.timestamp).toLocaleString(),
+        text: c.comment,
+      }));
+      setComments(formatted);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    }
+  };
+  // Quill properties
+  const modules = {
+    toolbar: {
+      container: [
+        [{ header: [1, 2, false] }],
+        ["bold", "italic", "underline", "strike", "blockquote"],
+        [{ list: "ordered" }, { list: "bullet" }, { indent: "-1" }, { indent: "+1" }],
+        ["link", "image"],
+        ["clean"],
+      ]
+    },
   };
 
-  try {
-    setLoading(true);
-    await axios.post("http://localhost:8080/api/comments/postCommentByIssueId", payload);
-    editor.setText(""); // clear editor
-    fetchComments(); // refresh comment list
-  } catch (error) {
-    console.error("Error submitting comment:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  const formats = [
+    "header", "bold", "italic", "underline", "strike",
+    "blockquote", "list", "bullet", "indent", "link", "image"
+  ];
+
+  const handleAddComment = async (e) => {
+    if (e) e.preventDefault();
+    const editor = quillRef.current?.getEditor();
+    const commentText = editor?.getText()?.trim();
+    const commentHTML = editor?.root?.innerHTML?.trim();
+
+    if (!commentText) return;
+
+    const payload = {
+      issueId: id,
+      comment: commentHTML,
+      timestamp: getISTDateTime(),
+      commentBy: username,
+    };
+
+    try {
+      setLoading(true);
+      await axios.post("http://localhost:8080/api/comments/postCommentByIssueId", payload);
+      setValue(""); // Clear the editor
+      setShowEditor(false); // Hide the editor
+      fetchComments(); // refresh comment list
+    } catch (error) {
+      console.error("Error submitting comment:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   const items = [
@@ -229,27 +251,27 @@ const fetchComments = async () => {
   const handleFileChange = (e) => {
     setSelectedFiles(Array.from(e.target.files));
   };
- 
-function getISTDateTime() {
-  const now = new Date();
 
-  // Format to 'yyyy-MM-ddTHH:mm:ss' using local time (which is already IST)
-  const pad = (n) => n.toString().padStart(2, '0');
-  const formatted =
-    now.getFullYear() +
-    '-' +
-    pad(now.getMonth() + 1) +
-    '-' +
-    pad(now.getDate()) +
-    'T' +
-    pad(now.getHours()) +
-    ':' +
-    pad(now.getMinutes()) +
-    ':' +
-    pad(now.getSeconds());
+  function getISTDateTime() {
+    const now = new Date();
 
-  return formatted;
-}
+    // Format to 'yyyy-MM-ddTHH:mm:ss' using local time (which is already IST)
+    const pad = (n) => n.toString().padStart(2, '0');
+    const formatted =
+      now.getFullYear() +
+      '-' +
+      pad(now.getMonth() + 1) +
+      '-' +
+      pad(now.getDate()) +
+      'T' +
+      pad(now.getHours()) +
+      ':' +
+      pad(now.getMinutes()) +
+      ':' +
+      pad(now.getSeconds());
+
+    return formatted;
+  }
 
 
   const handleUpload = async () => {
@@ -383,7 +405,7 @@ function getISTDateTime() {
       .catch((error) => {
         console.error("Error fetching issue details:", error);
       });
-      fetchComments();
+    fetchComments();
   }, [id]);
   const [accordionFields, setAccordionFields] = useState({
     assignee: "",
@@ -666,7 +688,7 @@ function getISTDateTime() {
                       if (index === 2) {
                         fetchAttachments();
                       }
-                      if(index === 0){
+                      if (index === 0) {
                         fetchComments();
                       }
                     }}
@@ -707,13 +729,13 @@ function getISTDateTime() {
                     </Modal>
 
 
-                    <TabList>
+                    {/* <TabList>
                       <Tab>
                         <LuUser />
                         Comments
                       </Tab>
                       <Tab>
-                        <LuFolder />
+                        <LuFolder style={{marginRight: '2px'}}/>
                         Link Issues
                       </Tab>
                       <Tab>
@@ -724,13 +746,13 @@ function getISTDateTime() {
 
                     <TabPanels>
                       <TabPanel>
-                        {/* Editor Section */}
+                        
                         <ReactQuill ref={quillRef} theme="snow" />
                         <Button colorScheme="blue" mt={3} onClick={handleAddComment}>Submit Comment</Button>
 
-                        {/* Comments Section - Styled like Jira */}
+                        
                         <VStack mt={5} align="stretch" spacing={4}>
-                          <Text fontSize="lg" fontWeight="bold">Comments:</Text>
+                          <Text fontSize="sm" fontWeight="bold">Comments:</Text>
                           {comments.length === 0 ? (
                             <Text>No comments yet</Text>
                           ) : (
@@ -843,7 +865,118 @@ function getISTDateTime() {
                         )}
                       </TabPanel>
 
-                    </TabPanels>
+                    </TabPanels> */}
+
+                    {/* New comment */}
+                    <Box maxW="700px" mx="auto" >
+                      {/* <Heading size="md" mb={4}>Activity</Heading> */}
+                      <Tabs mb={4} variant="unstyled" defaultIndex={1}>
+                        <TabList border="1px solid #dfe1e6" borderRadius="6px" bg="white" w="fit-content" px={1} py={1}>
+                          {["Comments", "Link Issues", "Attachments"].map((label, idx) => (
+                            <Tab
+                              key={label}
+                              fontSize="sm"
+                              fontWeight="normal"
+                              px={4}
+                              py={1}
+                              borderRadius="0"
+                              borderBottom="2px solid transparent"
+                              color="#172B4D"
+                              _selected={{
+                                color: "#0052CC",
+                                borderBottom: "2px solid #0052CC",
+                                bg: "white",
+                                fontWeight: "bold",
+                              }}
+                              _focus={{ boxShadow: "none" }}
+                              _hover={{ bg: "#F4F5F7" }}
+                            >{label}</Tab>
+                          ))}
+                          <Tab ></Tab>
+                        </TabList>
+                        <TabPanels>
+                          <TabPanel>
+                            <HStack align="flex-start" spacing={3} mb={6}>
+                              <Avatar name={username} size="sm" />
+                              <Box flex="1">
+                                {!showEditor ? (
+                                  <Input placeholder='Add a comment'
+                                    onFocus={() => {
+                                      setShowEditor(true);
+                                      setTimeout(() => {
+                                        quillRef.current?.getEditor().focus();
+                                      }, 0);
+                                    }}
+                                    bg="white"
+                                  />
+                                ) : (
+                                  <VStack align="stretch" spacing={3}>
+                                    <ReactQuill ref={quillRef} className="custom-quill"
+                                      theme="snow"
+                                      value={value}
+                                      onChange={setValue}
+                                      placeholder='Type your comment'
+                                      modules={modules}
+                                      formats={formats}
+                                      style={{ minHeight: 80, fontSize: "0.95rem" }}
+                                    />
+                                    <HStack>
+                                      <Button colorScheme='blue' size="sm" onClick={handleAddComment}>
+                                        Save
+                                      </Button>
+                                      <Button size="sm" variant="ghost" onClick={() => setShowEditor(false)} >
+                                        Cancel
+                                      </Button>
+                                    </HStack>
+                                  </VStack>
+                                )}
+                                {/* {!showEditor && (
+                                  <HStack mt={2} spacing={2}>
+                                    <Button size="xs" variant="outline">Suggest a reply...</Button>
+                                    <Button size="xs" variant="outline">Suggest a reply...</Button>
+                                    <Button size="xs" variant="outline">Suggest a reply...</Button>
+                                  </HStack>
+                                )} */}
+                                {/* {!showEditor && (
+                                  <Text fontSize="xs" color="gray.500" mt={1}>
+                                    comments
+                                  </Text>
+                                )} */}
+                              </Box>
+                            </HStack>
+                            <VStack align="stretch" spacing={6} ml={0}>
+                              {comments.map((comment) => (
+                                <HStack align="flex-start" key={comment.id} spacing={3}>
+                                  <Avatar name={comment.author} size="sm" />
+                                  <Box flex="1">
+                                    <Text fontWeight="bold">{comment.author}</Text>
+                                    <Text fontSize="xs" color="gray.500" mb={1}>
+                                      {comment.timestamp}
+                                    </Text>
+                                    <Box className='q1-editor'
+                                      dangerouslySetInnerHTML={{ __html: comment.text }} p={0} mb={2} />
+                                    <HStack spacing={3} fontSize="sm" color="gray.500">
+                                      {/* Only show Edit/Delete for the logged-in user's comments */}
+                                      {/* {comment.author === username ? (
+                                        <>
+                                          <Button size="xs" variant="link">Reply</Button>
+                                          <Button size="xs" variant="link">Edit</Button>
+                                          <Button size="xs" variant="link">Delete</Button>
+                                        </>
+                                      ) : ( */}
+                                      <Button size="xs" variant="link">Reply</Button>
+                                      {/* )} */}
+                                    </HStack>
+                                  </Box>
+                                </HStack>
+                              ))}
+                            </VStack>
+                          </TabPanel>
+                          <TabPanel />
+                          <TabPanel />
+                        </TabPanels>
+                      </Tabs>
+                    </Box>
                   </Tabs>
                 </div>
 
@@ -1031,7 +1164,7 @@ function getISTDateTime() {
               <Text>Preview not available for this file type.</Text>
             )}
           </ModalBody> */}
-        <ModalBody>
+          <ModalBody>
             <VStack spacing={5} align="stretch">
               {transitionPopupData?.requiredFields
                 ?.split(",")

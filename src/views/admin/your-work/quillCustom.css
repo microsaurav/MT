@@ -1,0 +1,19 @@
+.custom-quill {
+  margin-top: 1rem; 
+  margin-bottom: 1rem;
+  border: 1px solid #6b7280 !important; 
+  border-radius: 0.375rem !important; 
+  color: #1f2937; 
+  font-size: 1rem; 
+}
+
+@media (min-width: 1024px) {
+  .custom-quill {
+    font-size: 1.25rem; 
+  }
+}
+
+.custom-quill .ql-editor::placeholder {
+  color: #a0aec0; 
+  opacity: 1;
+}
