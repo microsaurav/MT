@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
-
+  SimpleGrid,
   Card,
   Button,
   Menu,
@@ -22,6 +22,7 @@ import {
   PopoverTrigger,
   PopoverContent,
   PopoverArrow,
+  Tooltip,
   PopoverCloseButton,
   Modal,
   ModalOverlay,
@@ -43,27 +44,52 @@ import {
   VStack,
   Text,
   Avatar,
-  HStack, Divider,
+  HStack,
+  Divider,
   Tag,
   Icon,
+  Image,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Flex,
+  Link,
+  IconButton
   Image,
   Heading
 } from "@chakra-ui/react";
 
+import {
+  LuCalendarClock,
+  LuFolder,
+  LuSquareCheck,
+  LuUser,
+  LuListChecks
+} from "react-icons/lu";
+
+import { FaBug, FaUserCircle,FaArrowUp } from "react-icons/fa"; // ✅ Added missing icons
+
+import { Link as RouterLink, useNavigate, useParams } from "react-router-dom"; // ✅ Added `Link`, already had useNavigate/useParams
+import { MdAttachMoney, MdAssignment } from "react-icons/md";
+import { PiTestTubeFill } from "react-icons/pi"
 import './quillCustom.css';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+
 import Popup from '../WorkflowPopupp';
 import SubtaskPopup from '../SubtaskPopup';
-import { LuFolder, LuSquareCheck, LuUser } from "react-icons/lu"
 import axios from 'axios';
 import Loading from '../components/Loading';
-import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { ChevronDownIcon } from "@chakra-ui/icons";
+
+import { ChevronDownIcon,EditIcon } from "@chakra-ui/icons";
 import { ArrowRightIcon } from "lucide-react"; // optional icon
+
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import the default styles
+
 import { MdOutlineAddComment } from 'react-icons/md';
 export default function Overview() {
 
@@ -74,6 +100,7 @@ export default function Overview() {
   const [message, setMessage] = useState("Open");
   const [previewFile, setPreviewFile] = useState(null); // { filename, blobUrl, type }
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [dateDetails, setDateDetails] = useState({});
   const [status, setStatus] = useState(""); // current status
   const [transitionOptions, setTransitionOptions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false); // control showing select
@@ -83,6 +110,13 @@ export default function Overview() {
   const [isTransitionPopupOpen, setIsTransitionPopupOpen] = useState(false);
   const [transitionPopupData, setTransitionPopupData] = useState(null);
   const [transitionFormData, setTransitionFormData] = useState({});
+  const [linkedIssues, setLinkedIssues] = useState([]);
+  const [editorValue, setEditorValue] = useState("");
+const [isEditing, setIsEditing] = useState(false);
+const [editIndex, setEditIndex] = useState(null);
+const [editValue, setEditValue] = useState("");
+const [subTasks, setSubTasks] = useState([]);
+const navigate = useNavigate();
   const [showEditor, setShowEditor] = useState(false);
   const [value, setValue] = useState("");
   const userData = JSON.parse(sessionStorage.getItem("userData"));
@@ -91,6 +125,7 @@ export default function Overview() {
   const addRow = () => {
     setRows([...rows, { value: "please add details", selectValue: "Option1" }]);
   };
+  
 
   const addRowLinkIssue = () => {
     setRowsLinkIssue([...rowsLinkIssue, { value: "please add details", selectValue: "Option1" }]);
@@ -113,7 +148,41 @@ export default function Overview() {
     updatedRows[index].value = val;
     setRowsLinkIssue(updatedRows);
   };
-
+  const handleEditClick = (index) => {
+    setEditIndex(index);
+    setEditValue(comments[index].text);
+    setIsEditing(true);
+  };
+  const formatToISOString = (dateString) => {
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 19); // "YYYY-MM-DDTHH:mm:ss"
+  };
+  const handleSaveEdit = async () => {
+    if (editIndex === null) return;
+  
+    const updatedComment = {
+      issueId: id,
+      comment: editValue,
+      timestamp: new Date().toISOString().slice(0, 19),
+      commentBy: comments[editIndex].author,
+    };
+  
+    try {
+      await axios.put("http://localhost:8080/api/comments/updateCommentById", updatedComment);
+  
+      // Update comments list locally
+      const newComments = [...comments];
+      newComments[editIndex].text = editValue;
+      setComments(newComments);
+  
+      setIsEditing(false);
+      setEditIndex(null);
+      setEditValue("");
+    } catch (err) {
+      console.error("Failed to update comment:", err);
+    }
+  };
+  
   const handleSelectChangeLinkIssue = (event, index) => {
     const updatedRows = [...rowsLinkIssue];
     updatedRows[index].selectValue = event.target.value;
@@ -170,6 +239,63 @@ export default function Overview() {
       .replace(/\s(.)/g, (match, group1) => group1.toUpperCase())
       .replace(/^(.)/, (match, group1) => group1.toLowerCase());
   }
+const fetchComments = async () => {
+  setLoading(true)
+  try {
+    const response = await axios.get(`http://localhost:8080/api/comments/getCommentByIssueId/${id}`);
+    const formatted = response.data.map((c) => ({
+      author: c.commentBy,
+      timestamp: new Date(c.timestamp).toLocaleString(),
+      text: c.comment,
+    }));
+    setComments(formatted);
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+  }
+  finally{
+    setLoading(false)
+  }
+};
+const fetchSubTasksAndLinkedIssues = async () => {
+  setLoading(true)
+  try {
+    const res = await fetch(`http://localhost:8080/api/GetIssuedetailsbyParentCr/${id}`);
+    const data = await res.json();
+
+    const subtasks = data.filter(item => item.issueType !== "Bug");
+    const linked = data.filter(item => item.issueType === "Bug");
+
+    setSubTasks(subtasks);
+    setLinkedIssues(linked);
+  } catch (error) {
+    console.error("Error fetching subtasks/linked issues:", error);
+  }
+  finally{
+    setLoading(false)
+  }
+};
+
+const fetchDateDetails = async () => {
+  setLoading(true)
+  try {
+    const response = await axios.get(`http://localhost:8080/api/GetCrDateDetailsByIssueId/${id}`); // Replace with your actual endpoint
+    if (response.status === 200) {
+      setDateDetails(response.data);
+    } else {
+      console.error("Failed to fetch date details");
+    }
+  } catch (error) {
+    console.error("Error fetching date details:", error);
+  }finally{
+    setLoading(false)
+  }
+};
+
+
+ const handleAddComment = async () => {
+  const editor = quillRef.current?.getEditor();
+  const commentText = editor?.getText()?.trim();
+  const commentHTML = editor?.root?.innerHTML?.trim();
   const fetchComments = async () => {
     try {
       const response = await axios.get(`http://localhost:8080/api/comments/getCommentByIssueId/${id}`);
@@ -247,7 +373,7 @@ export default function Overview() {
 
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
-
+  const [accordionFields, setAccordionFields] = useState({});
   const handleFileChange = (e) => {
     setSelectedFiles(Array.from(e.target.files));
   };
@@ -335,7 +461,25 @@ export default function Overview() {
     updated.splice(index, 1);
     setUploadedFiles(updated);
   };
-
+  const handleAccordionChange = (e, field) => {
+    const value = e.target.value;
+    setAccordionFields((prev) => ({ ...prev, [field]: value }));
+  
+    axios.post("http://localhost:8080/api/crDataPush", {
+      issueId: id,
+      [field]: value,
+    });
+  };
+  
+  const handleAccordionEditableChange = (field, value) => {
+    setAccordionFields((prev) => ({ ...prev, [field]: value }));
+  
+    axios.post("http://localhost:8080/api/crDataPush", {
+      issueId: id,
+      [field]: value,
+    });
+  };
+  
   // Inline styles
   const styles = {
     container: {
@@ -392,27 +536,41 @@ export default function Overview() {
       .then((response) => {
         setIssueData(response.data);
         setStatus(response.data.status || "Open");
-        // Initialize editable fields once API call is successful
-        const initialFields = {
-          "Description": response.data.description || "NA",
-          "In Scope": response.data.inScope || "NA",
-          "Out Scope": response.data.outScope || "NA",
-          "Business Need Benefits Details": response.data.businessNeedBenefitsDetails || "NA",
-          "Learnings": "" // Default since API doesn't return it
-        };
+  
+        let initialFields;
+        if (response.data.issueType === "Bug") {
+          initialFields = {
+            "Description": response.data.description || "NA",
+            "Steps to Reproduce": response.data.stepsToReproduce || "NA",
+            "Expected Output": response.data.expectedOutput || "NA",
+            "Actual Output": response.data.actualOutput || "NA",
+          };
+        } else {
+          initialFields = {
+            "Description": response.data.description || "NA",
+            "In Scope": response.data.inScope || "NA",
+            "Out Scope": response.data.outScope || "NA",
+            "Business Need Benefits Details": response.data.businessNeedBenefitsDetails || "NA",
+          };
+        }
+        setAccordionFields({
+          assignee: response.data.assignee || "",
+          reporter: response.data.reporter || "",
+          priority: response.data.priority || "",
+          crApprovedDate: response.data.crApprovedDate || "",
+          primaryBA: response.data.primaryBA || "",
+        });
         setEditableFields(initialFields);
       })
       .catch((error) => {
         console.error("Error fetching issue details:", error);
       });
+  
+    fetchComments();
     fetchComments();
   }, [id]);
-  const [accordionFields, setAccordionFields] = useState({
-    assignee: "",
-    reporter: "",
-    priority: "",
-    primaryBA: ""
-  });
+  
+ 
   const fetchTransitions = () => {
     axios
       .post("http://localhost:8080/api/workflow/transitions", {
@@ -472,13 +630,29 @@ export default function Overview() {
         return "application/octet-stream";
     }
   };
-
-  const handleAccordionChange = (e, field) => {
-    setAccordionFields(prev => ({
-      ...prev,
-      [field]: e.target.value
-    }));
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleDateString();
   };
+  
+  const calculateDuration = (start, end) => {
+    if (!start || !end) return "—";
+    const diff = (new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24);
+    return `${diff} days`;
+  };
+  
+  const calculateDelay = (plannedEnd, actualEnd) => {
+    if (!plannedEnd || !actualEnd) return "—";
+    const delay = (new Date(actualEnd) - new Date(plannedEnd)) / (1000 * 60 * 60 * 24);
+    return delay > 0 ? `${delay} days` : "On time";
+  };
+  
+  // const handleAccordionChange = (e, field) => {
+  //   setAccordionFields(prev => ({
+  //     ...prev,
+  //     [field]: e.target.value
+  //   }));
+  // };
   const fetchAttachments = async () => {
     setLoading(true)
     try {
@@ -496,7 +670,41 @@ export default function Overview() {
       setLoading(false);
     }
   };
-
+  const handleFieldChange = (label, value) => {
+    // Update field value in state
+    setEditableFields((prev) => ({
+      ...prev,
+      [label]: value,
+    }));
+  
+    // Prepare request payload
+    const payload = {
+      issueId: id,
+      [label.toLowerCase().replace(/\s+/g, "")]: value  // Convert label to camelCase-ish keys like "description"
+    };
+  
+    // Rename keys if needed to match exact backend expectation
+    if (label === "Steps to Reproduce") payload.stepsToReproduce = value;
+    else if (label === "Expected Output") payload.expectedOutput = value;
+    else if (label === "Actual Output") payload.actualOutput = value;
+    else if (label === "Description") payload.description = value;
+    // else if (label === "In Scope") payload.inScope = value;
+    // else if (label === "Out Scope") payload.outScope = value;
+    else if (label === "Business Need Benefits Details") payload.businessNeedBenefitsDetails = value;
+  
+    // Remove unwanted derived key (from label.toLowerCase())
+    // delete payload[label.toLowerCase().replace(/\s+/g, "")];
+  
+    // Send to API
+    axios.post("http://localhost:8080/api/crDataPush", payload)
+      .then(() => {
+        console.log(`${label} updated successfully`);
+      })
+      .catch((err) => {
+        console.error(`Error updating ${label}:`, err);
+      });
+  };
+  
   // Populate from API once it's loaded
   useEffect(() => {
     if (issueData) {
@@ -514,7 +722,7 @@ export default function Overview() {
     <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
       <Card flexDirection="column" w="100%" px="25px" mb="20px" overflow="hidden">
         <Popup isOpen={isPopupOpen} data={message} onClose={handleClosePopup} />
-        <SubtaskPopup isOpen={isSubtaskPopupOpen} onClose={handleSubtaskClosePopup} />
+        <SubtaskPopup isOpen={isSubtaskPopupOpen} onClose={handleSubtaskClosePopup} data={issueData}/>
         <div style={{ display: "flex", width: "100%" }}>
 
           {/* Left Section (70%) */}
@@ -530,12 +738,12 @@ export default function Overview() {
                   </MenuButton>
                   <Portal>
                     <MenuList>
-                      <MenuItem>Attachment</MenuItem>
+                      {/* <MenuItem>Attachment</MenuItem> */}
                       <MenuItem onClick={() => {
                         handleSubtaskOpenPopup();
                       }}>Subtask</MenuItem>
-                      <MenuItem onClick={addRowLinkIssue}>Linked Issue</MenuItem>
-                      <MenuItem>Web Link</MenuItem>
+                      {/* <MenuItem onClick={addRowLinkIssue}>Linked Issue</MenuItem> */}
+                      {/* <MenuItem>Web Link</MenuItem> */}
                     </MenuList>
                   </Portal>
                 </Menu>
@@ -543,26 +751,52 @@ export default function Overview() {
 
               {/* Editable Sections */}
               <div style={{ margin: "5px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                {["Description", "In Scope", "Out Scope", "Business Need Benefits Details"].map((label, index) => (
-                  <div key={index} style={{ margin: "5px" }}>
-                    <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
-                    <div>
-                      <Editable
-                        textAlign="start"
-                        value={editableFields[label] || ""}
-                        onChange={(val) =>
-                          setEditableFields((prev) => ({
-                            ...prev,
-                            [label]: val,
-                          }))
-                        }
-                      >
-                        <EditablePreview />
-                        <EditableInput />
-                      </Editable>
-                    </div>
-                  </div>
-                ))}
+              {issueData.issueType === "Bug" ? (
+  ["Description", "Steps to Reproduce", "Expected Output", "Actual Output"].map((label, index) => (
+    <div key={index} style={{ margin: "5px" }}>
+      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
+      <div>
+        <Editable
+          textAlign="start"
+          value={editableFields[label] || ""}
+          onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
+  onChange={(val) =>
+    setEditableFields((prev) => ({
+      ...prev,
+      [label]: val,
+    }))
+  }
+        >
+          <EditablePreview />
+          <EditableInput />
+        </Editable>
+      </div>
+    </div>
+  ))
+
+) : (
+  ["Description",  "Business Need Benefits Details"].map((label, index) => (
+    <div key={index} style={{ margin: "5px" }}>
+      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
+      <div>
+        <Editable
+          textAlign="start"
+          value={editableFields[label] || ""}
+          onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
+          onChange={(val) =>
+            setEditableFields((prev) => ({
+              ...prev,
+              [label]: val,
+            }))
+          }
+        >
+          <EditablePreview />
+          <EditableInput />
+        </Editable>
+      </div>
+    </div>
+  ))
+)}
 
                 <div style={{ margin: "5px" }}>
                   <label style={{ fontSize: "18px", fontWeight: 500 }}>Attachments</label>
@@ -583,7 +817,7 @@ export default function Overview() {
                 </div>
 
                 {/* Subtask Section */}
-                <div style={{ margin: "5px" }}>
+                {/* <div style={{ margin: "5px" }}>
                   <label style={{ fontSize: "18px", fontWeight: 500 }}>Subtask</label>
                   <div>
                     {rows.map((row, index) => (
@@ -620,23 +854,23 @@ export default function Overview() {
                           />
                         </Editable>
 
-                        {/* Cancel Button */}
+                      
                         <Button colorScheme="red" size="sm" onClick={() => handleCancel(index)}>
                           Cancel
                         </Button>
                       </div>
                     ))}
                   </div>
-                </div>
+                </div> */}
 
                 {/* Link Issue Section */}
-                <div style={{ margin: "5px" }}>
+                {/* <div style={{ margin: "5px" }}>
                   <label style={{ fontSize: "18px", fontWeight: 500 }}>Link Issue</label>
                   <div>
                     {rowsLinkIssue.map((row, index) => (
                       <div key={index} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "5px" }}>
 
-                        {/* Select Dropdown */}
+                       
                         <Select
                           value={row.selectValue}
                           onChange={(e) => handleSelectChangeLinkIssue(e, index)}
@@ -648,7 +882,6 @@ export default function Overview() {
                           <option value="Option4">Sub-Task</option>
                         </Select>
 
-                        {/* Editable Input */}
                         <Editable
                           defaultValue={row.value}
                           onChange={(val) => handleChangeLinkIssue(val, index)}
@@ -667,13 +900,17 @@ export default function Overview() {
                           />
                         </Editable>
 
-                        {/* Cancel Button */}
+                       
                         <Button colorScheme="red" size="sm" onClick={() => handleCancelLinkIssue(index)}>
                           Cancel
                         </Button>
                       </div>
                     ))}
                   </div>
+                </div> */}
+
+                {/* Attachment Modal */}
+                <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} isCentered>
                 </div>
 
                 <div style={{ margin: "5px" }}>
@@ -727,6 +964,28 @@ export default function Overview() {
                         </ModalFooter>
                       </ModalContent>
                     </Modal>
+                <div style={{ margin: "5px" }}>
+                  <label style={{ fontSize: "18px", fontWeight: 500 }}>Activity</label>
+
+                  <Tabs
+                    index={tabIndex}
+                    onChange={(index) => {
+                      setTabIndex(index);
+
+                      // If Attachments tab is selected (index 2)
+                      if (index === 2) {
+                        fetchAttachments();
+                      }
+                      if(index === 0){
+                        fetchComments();
+                      }
+                    
+                      if (index === 3) fetchDateDetails(); 
+                      if (index === 4 || index === 1) fetchSubTasksAndLinkedIssues();
+                    }}
+                  >
+                    {/* Preview Modal */}
+                    
 
 
                     {/* <TabList>
@@ -742,13 +1001,62 @@ export default function Overview() {
                         <LuSquareCheck />
                         Attachments
                       </Tab>
+                      <Tab><LuCalendarClock /> Dates</Tab>
+                      <Tab><LuListChecks /> Subtasks</Tab>
+
                     </TabList>
 
                     <TabPanels>
+                    <TabPanel>
+  {/* New Comment Input */}
+  <ReactQuill ref={quillRef} theme="snow" value={editorValue} onChange={setEditorValue} />
+  <Button colorScheme="blue" mt={3} onClick={handleAddComment}>Submit Comment</Button>
                       <TabPanel>
                         
                         <ReactQuill ref={quillRef} theme="snow" />
                         <Button colorScheme="blue" mt={3} onClick={handleAddComment}>Submit Comment</Button>
+
+  {/* Comment List */}
+  <VStack mt={5} align="stretch" spacing={4}>
+    <Text fontSize="lg" fontWeight="bold">Comments:</Text>
+    {comments.length === 0 ? (
+      <Text>No comments yet</Text>
+    ) : (
+      comments.map((comment, index) => (
+        <Box key={index} p={4} borderWidth={1} borderRadius="lg" bg="gray.50">
+          <HStack mb={2} justify="space-between">
+            <HStack>
+              <Avatar name={comment.author} size="sm" />
+              <Box>
+                <Text fontWeight="bold">{comment.author}</Text>
+                <Text fontSize="sm" color="gray.500">{comment.timestamp}</Text>
+              </Box>
+            </HStack>
+            {comment.author === username && (
+              <IconButton
+                size="sm"
+                icon={<EditIcon />}
+                aria-label="Edit comment"
+                onClick={() => handleEditClick(index)}
+              />
+            )}
+          </HStack>
+
+          {isEditing && editIndex === index ? (
+            <>
+              <ReactQuill theme="snow" value={editValue} onChange={setEditValue} />
+              <Button mt={2} colorScheme="green" size="sm" onClick={handleSaveEdit}>Save</Button>
+            </>
+          ) : (
+            <Box dangerouslySetInnerHTML={{ __html: comment.text }} />
+          )}
+
+          <Divider mt={3} />
+        </Box>
+      ))
+    )}
+  </VStack>
+</TabPanel>
 
                         
                         <VStack mt={5} align="stretch" spacing={4}>
@@ -773,8 +1081,67 @@ export default function Overview() {
                         </VStack>
                       </TabPanel>
                       <TabPanel>
-                        <p>Manage your projects</p>
-                      </TabPanel>
+  <Box maxH="400px" overflowY="auto" border="1px solid #E2E8F0" borderRadius="md" p={3}>
+    <Text fontWeight="bold" fontSize="md" mb={2}>Linked Work Items</Text>
+    <Text fontSize="sm" mb={3} color="gray.500">is blocked by</Text>
+
+    <VStack spacing={3} align="stretch">
+      {linkedIssues.map((issue) => (
+        <Flex
+          key={issue.id}
+          p={3}
+          borderRadius="md"
+          bg="white"
+          boxShadow="sm"
+          align="center"
+          justify="space-between"
+          _hover={{ boxShadow: "md", cursor: "pointer" }}
+        >
+          {/* Left Section: Issue Info */}
+          <Flex align="center" gap={3}>
+            <Icon as={FaBug} color="red.500" boxSize={5} />
+            <Box>
+              <Text
+                onClick={() => window.location.href = `/admin/view/${issue.issueId}`}
+                color="blue.600"
+                fontWeight="bold"
+                _hover={{ textDecoration: "underline" }}
+              >
+                {issue.issueId}
+              </Text>
+              <Text fontSize="sm" color="gray.600">
+                {issue.summary.length > 80
+                  ? issue.summary.slice(0, 77) + "..."
+                  : issue.summary}
+              </Text>
+            </Box>
+          </Flex>
+
+          {/* Right Section: Assignee + Status */}
+          <Flex align="center" gap={2}>
+            <Tooltip label={issue.assignee} fontSize="sm" hasArrow>
+              <Avatar size="sm" icon={<FaUserCircle />} />
+            </Tooltip>
+            <Tag
+              size="sm"
+              colorScheme={
+                issue.status === "Closed" ? "green" :
+                issue.status === "In Progress" ? "yellow" :
+                issue.status === "Open" ? "blue" :
+                "gray"
+              }
+            >
+              {issue.status}
+            </Tag>
+          </Flex>
+        </Flex>
+      ))}
+    </VStack>
+  </Box>
+</TabPanel>
+
+
+
                       <TabPanel>
                         {attachments.length === 0 ? (
                           <Text>No attachments</Text>
@@ -864,6 +1231,144 @@ export default function Overview() {
                           </VStack>
                         )}
                       </TabPanel>
+                    
+
+                      <TabPanel>
+      {/* Dates tab panel content */}
+      <Table variant="simple" size="sm">
+        <Thead bg="gray.100">
+          <Tr>
+            <Th>Phase</Th>
+            <Th>Planned Start</Th>
+            <Th>Planned End</Th>
+            <Th>Actual Start</Th>
+            <Th>Actual End</Th>
+            <Th>Duration</Th>
+            <Th>Delay</Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {[
+            {
+              title: "FSD",
+              plannedStart: dateDetails?.plannedFSDStartDate,
+              plannedEnd: dateDetails?.plannedFSDEndDate,
+              actualStart: null,
+              actualEnd: null,
+            },
+            {
+              title: "QA Testing",
+              plannedStart: dateDetails?.plannedQaTestingStartDate,
+              plannedEnd: dateDetails?.plannedQaTestingEndDate,
+              actualStart: dateDetails?.actualQaTestingStartDate,
+              actualEnd: dateDetails?.actualQaTestingEndDate,
+            },
+            {
+              title: "UAT",
+              plannedStart: dateDetails?.plannedUatStartDate,
+              plannedEnd: dateDetails?.plannedUatEndDate,
+              actualStart: null,
+              actualEnd: null,
+            },
+            {
+              title: "Go Live",
+              plannedStart: dateDetails?.plannedGoLiveDate,
+              plannedEnd: null,
+              actualStart: null,
+              actualEnd: dateDetails?.actualGoLiveDate,
+            },
+          ].map((row) => {
+            const formatDate = (d) => d ? new Date(d).toLocaleDateString() : "-";
+            const duration = (s, e) => (s && e) ? `${(new Date(e) - new Date(s)) / (1000 * 3600 * 24)} day(s)` : "-";
+            const delay = (planned, actual) => (planned && actual)
+              ? `${(new Date(actual) - new Date(planned)) / (1000 * 3600 * 24)} day(s)`
+              : "-";
+
+            return (
+              <Tr key={row.title}>
+                <Td>{row.title}</Td>
+                <Td>{formatDate(row.plannedStart)}</Td>
+                <Td>{formatDate(row.plannedEnd)}</Td>
+                <Td>{formatDate(row.actualStart)}</Td>
+                <Td>{formatDate(row.actualEnd)}</Td>
+                <Td>{duration(row.plannedStart, row.plannedEnd)}</Td>
+                <Td>{delay(row.plannedEnd, row.actualEnd)}</Td>
+              </Tr>
+            );
+          })}
+        </Tbody>
+      </Table>
+      </TabPanel>
+      <TabPanel>
+  <Box maxH="500px" overflowY="auto" p={2}>
+    <Text fontWeight="bold" fontSize="md" mb={3}>Subtasks</Text>
+
+    <VStack spacing={4} align="stretch">
+      {subTasks.map((task) => {
+        let typeIcon;
+        switch (task.issueType.toLowerCase()) {
+          case 'maintenance':
+            typeIcon = <MdAttachMoney color="green" size={20} />;
+            break;
+          case 'qa':
+            typeIcon = <PiTestTubeFill color="purple" size={20} />;
+            break;
+          default:
+            typeIcon = <MdAssignment color="blue" size={20} />;
+        }
+
+        const priorityIcon = <FaArrowUp color="red" />;
+        const statusColor =
+          task.status.toLowerCase().includes("close") ? "green.100"
+          : task.status.toLowerCase().includes("development") ? "blue.100"
+          : "gray.100";
+
+        return (
+          <Flex
+            key={task.id}
+            p={4}
+            bg="white"
+            borderRadius="md"
+            boxShadow="sm"
+            justify="space-between"
+            align="center"
+            _hover={{ boxShadow: "md", cursor: "pointer" }}
+            onClick={() => window.location.href = `/admin/view/${task.issueId}`}
+          >
+            {/* Left section with icon, ID, Summary */}
+            <HStack spacing={4}>
+              <Box>{typeIcon}</Box>
+              <Box>
+                <Text fontWeight="bold" color="blue.600">
+                  {task.issueId}
+                </Text>
+                <Text fontSize="sm" color="gray.600" noOfLines={1}>
+                  {task.summary}
+                </Text>
+              </Box>
+            </HStack>
+
+            {/* Right section with Priority, Assignee (Avatar only), Status */}
+            <HStack spacing={4}>
+              <Box>{priorityIcon}</Box>
+              <Tooltip label={task.assignee} fontSize="sm" hasArrow>
+                <Avatar size="sm" icon={<FaUserCircle />} name={task.assignee} />
+              </Tooltip>
+              <Tag bg={statusColor} color="gray.800" fontWeight="bold" px={3} py={1}>
+                {task.status}
+              </Tag>
+            </HStack>
+          </Flex>
+        );
+      })}
+    </VStack>
+  </Box>
+</TabPanel>
+
+
+
+
+
 
                     </TabPanels> */}
 
@@ -1066,69 +1571,87 @@ export default function Overview() {
             </div>
 
             <div style={{ marginTop: "10px", marginLeft: "10px" }}>
-              <div>
-                <Accordion allowMultiple>
-                  {items.map((item, index) => (
-                    <AccordionItem key={index}>
-                      <h2>
-                        <AccordionButton>
-                          <Box flex="1" textAlign="left">{item.title}</Box>
-                          <AccordionIcon />
-                        </AccordionButton>
-                      </h2>
-                      <AccordionPanel>
-                        {index === 0 ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <label>Assignee</label>
-                              <Select value={accordionFields.assignee} onChange={(e) => handleAccordionChange(e, "assignee")} width="200px">
-                                <option value="Option1">Saurav Kumar</option>
-                                <option value="Option2">Om Thange</option>
-                                <option value="Option3">Prathamesh Kokane</option>
-                              </Select>
-                            </div>
+            <div>
+  <Accordion allowMultiple>
+    {items.map((item, index) => (
+      <AccordionItem key={index}>
+        <h2>
+          <AccordionButton>
+            <Box flex="1" textAlign="left">{item.title}</Box>
+            <AccordionIcon />
+          </AccordionButton>
+        </h2>
 
-                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <label>Reporter</label>
-                              <Select value={accordionFields.reporter} onChange={(e) => handleAccordionChange(e, "reporter")} width="200px">
-                                <option value="saurav.kumar10">Saurav Kumar</option>
-                                <option value="HI448213">Om Thange</option>
-                              </Select>
-                            </div>
+        <AccordionPanel>
+          {index === 0 ? (
+            <VStack spacing={4} align="stretch">
+              {/* Assignee */}
+              <HStack justify="space-between">
+                <Text>Assignee</Text>
+                <Select
+                  value={accordionFields.assignee}
+                  onChange={(e) => handleAccordionChange(e, "assignee")}
+                  width="200px"
+                >
+                  <option value="Saurav Kumar">Saurav Kumar</option>
+                  <option value="Om Thange">Om Thange</option>
+                  <option value="Prathamesh Kokane">Prathamesh Kokane</option>
+                </Select>
+              </HStack>
 
+              {/* Reporter - Editable */}
+              <HStack justify="space-between">
+                <Text>Reporter</Text>
+                <Editable
+                  value={accordionFields.reporter}
+                  onChange={(val) => handleAccordionEditableChange("reporter", val)}
+                >
+                  <EditablePreview />
+                  <EditableInput width="200px" />
+                </Editable>
+              </HStack>
 
+              {/* Priority */}
+              <HStack justify="space-between">
+                <Text>Priority</Text>
+                <Select
+                  value={accordionFields.priority}
+                  onChange={(e) => handleAccordionChange(e, "priority")}
+                  width="200px"
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </Select>
+              </HStack>
 
-                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <label>Priority</label>
-                              <Select value={accordionFields.priority} onChange={(e) => handleAccordionChange(e, "priority")} width="200px">
-                                <option value="Low">Low</option>
-                                <option value="Medium">Medium</option>
-                                <option value="High">High</option>
-                              </Select>
-                            </div>
+              {/* CR Approved Date (Optional - view only for now) */}
+              <HStack justify="space-between">
+                <Text>CR Approved Date</Text>
+                <Text>{accordionFields.crApprovedDate || "NA"}</Text>
+              </HStack>
 
-                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <label>CR Approved Date</label>
+              {/* Primary BA - Editable */}
+              <HStack justify="space-between">
+                <Text>Primary BA</Text>
+                <Editable
+                  value={accordionFields.primaryBA}
+                  onChange={(val) => handleAccordionEditableChange("primaryBA", val)}
+                >
+                  <EditablePreview />
+                  <EditableInput width="200px" />
+                </Editable>
+              </HStack>
+            </VStack>
+          ) : (
+            <Text>{item.text}</Text>
+          )}
+        </AccordionPanel>
+      </AccordionItem>
+    ))}
+  </Accordion>
+</div>
 
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <label>Primary BA</label>
-                              <Select value={accordionFields.primaryBA} onChange={(e) => handleAccordionChange(e, "primaryBA")} width="200px">
-                                <option value="Prachi Darade">Prachi Darade</option>
-                                <option value="Mahesh nair">Mahesh nair</option>
-                              </Select>
-                            </div>
-                          </div>
-
-                        ) : (
-                          <p>{item.text}</p>
-                        )}
-                      </AccordionPanel>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </div>
             </div>
           </div>
         </div>
