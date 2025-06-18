@@ -46,7 +46,7 @@ const Loading = () => {
             borderRadius="50%"
             bg={dotColor}
             animation="bounce 1.2s infinite ease-in-out"
-            animationDelay={`${delay}s`}
+            animationdelay={`${delay}s`}
           />
         ))}
       </Flex>

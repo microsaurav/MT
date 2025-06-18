@@ -59,7 +59,6 @@ export default function CreateIssueModal() {
     justification: ''
   });
 
-
   const { isOpen, onOpen, onClose } = useDisclosure();
   const bgColor = useColorModeValue("gray.50", "gray.800");
   const textColor = useColorModeValue('secondaryGray.900', 'white');
@@ -84,14 +83,12 @@ export default function CreateIssueModal() {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-
     try {
       const response = await fetch('http://localhost:8080/api/PostIssuedetails', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(issueData),
       });
-
 
       if (response.ok) {
         const result = await response.json();
@@ -107,7 +104,6 @@ export default function CreateIssueModal() {
   };
 
   // Options for the dropdown
-
 
   // Handling tags addition
   const handleAddTag = (e) => {
@@ -141,32 +137,32 @@ export default function CreateIssueModal() {
         overflow="hidden"
       >
         <Box>
-            <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="1px">
-                  <FormControl isRequired>
-                    <FormLabel htmlFor="project" color="gray.400">
-                      Project
-                    </FormLabel>
-                    <Select
-                      id="projectName"
-                      value={issueData.projectName}
-                      onChange={(e) =>
-                        setIssueData({ ...issueData, projectName: e.target.value })
-                      }
-                      borderColor={borderColor}
-                      textColor={textColor}
-                      _hover={{ borderColor: 'brandScheme.400' }}
-                      _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor={bgColor}
-                    >
-                      <option value="" disabled>
-                        Select an Option
-                      </option>
-                      <option value="ABHI Change Request Management">
-                        ABHI Change Request Management
-                      </option>
-                      {/* <option value="Prodcution">ABHI Products Defect Management</option> */}
-                    </Select>
-                  </FormControl>
+          <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+            <FormControl isRequired>
+              <FormLabel htmlFor="project" color="gray.400">
+                Project
+              </FormLabel>
+              <Select
+                id="projectName"
+                value={issueData.projectName}
+                onChange={(e) =>
+                  setIssueData({ ...issueData, projectName: e.target.value })
+                }
+                borderColor={borderColor}
+                textColor={textColor}
+                _hover={{ borderColor: 'brandScheme.400' }}
+                _focus={{ borderColor: 'brandScheme.400' }}
+                backgroundColor={bgColor}
+              >
+                <option value="" disabled>
+                  Select an Option
+                </option>
+                <option value="ABHI Change Request Management">
+                  ABHI Change Request Management
+                </option>
+                {/* <option value="Prodcution">ABHI Products Defect Management</option> */}
+              </Select>
+            </FormControl>
 
             <FormControl isRequired>
               {/* <FormLabel htmlFor="severity" color="gray.400">
