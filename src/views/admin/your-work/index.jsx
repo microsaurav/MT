@@ -58,8 +58,6 @@ import {
   Flex,
   Link,
   IconButton
-  Image,
-  Heading
 } from "@chakra-ui/react";
 
 import {
@@ -67,30 +65,33 @@ import {
   LuFolder,
   LuSquareCheck,
   LuUser,
-  LuListChecks
+  LuListChecks,
+  LuPaperclip,
+  LuImage,
+  LuFileText,
+  LuFile,
+  LuDownload,
+  LuTrash
 } from "react-icons/lu";
 
-import { FaBug, FaUserCircle,FaArrowUp } from "react-icons/fa"; // ✅ Added missing icons
-
+import { FaBug, FaUserCircle, FaArrowUp } from "react-icons/fa"; // ✅ Added missing icons
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom"; // ✅ Added `Link`, already had useNavigate/useParams
 import { MdAttachMoney, MdAssignment } from "react-icons/md";
 import { PiTestTubeFill } from "react-icons/pi"
-import './quillCustom.css';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-
+import './YourWork.css';
 import Popup from '../WorkflowPopupp';
 import SubtaskPopup from '../SubtaskPopup';
 import axios from 'axios';
 import Loading from '../components/Loading';
 
-import { ChevronDownIcon,EditIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon, EditIcon, DeleteIcon, ViewIcon, DownloadIcon } from "@chakra-ui/icons";
 import { ArrowRightIcon } from "lucide-react"; // optional icon
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import the default styles
 
-import { MdOutlineAddComment } from 'react-icons/md';
 export default function Overview() {
 
   const [rows, setRows] = useState([]);
@@ -112,20 +113,20 @@ export default function Overview() {
   const [transitionFormData, setTransitionFormData] = useState({});
   const [linkedIssues, setLinkedIssues] = useState([]);
   const [editorValue, setEditorValue] = useState("");
-const [isEditing, setIsEditing] = useState(false);
-const [editIndex, setEditIndex] = useState(null);
-const [editValue, setEditValue] = useState("");
-const [subTasks, setSubTasks] = useState([]);
-const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editIndex, setEditIndex] = useState(null);
+  const [editValue, setEditValue] = useState("");
+  const [subTasks, setSubTasks] = useState([]);
   const [showEditor, setShowEditor] = useState(false);
   const [value, setValue] = useState("");
+  const navigate = useNavigate();
   const userData = JSON.parse(sessionStorage.getItem("userData"));
   console.log("userData", userData);
   const username = userData.username
   const addRow = () => {
     setRows([...rows, { value: "please add details", selectValue: "Option1" }]);
   };
-  
+
 
   const addRowLinkIssue = () => {
     setRowsLinkIssue([...rowsLinkIssue, { value: "please add details", selectValue: "Option1" }]);
@@ -149,6 +150,14 @@ const navigate = useNavigate();
     setRowsLinkIssue(updatedRows);
   };
   const handleEditClick = (index) => {
+    if (!editValue.trim()) {
+      toast({
+        title: "Edit cannot be empty.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
     setEditIndex(index);
     setEditValue(comments[index].text);
     setIsEditing(true);
@@ -159,22 +168,22 @@ const navigate = useNavigate();
   };
   const handleSaveEdit = async () => {
     if (editIndex === null) return;
-  
+
     const updatedComment = {
       issueId: id,
       comment: editValue,
       timestamp: new Date().toISOString().slice(0, 19),
       commentBy: comments[editIndex].author,
     };
-  
+
     try {
       await axios.put("http://localhost:8080/api/comments/updateCommentById", updatedComment);
-  
+
       // Update comments list locally
       const newComments = [...comments];
       newComments[editIndex].text = editValue;
       setComments(newComments);
-  
+
       setIsEditing(false);
       setEditIndex(null);
       setEditValue("");
@@ -182,7 +191,7 @@ const navigate = useNavigate();
       console.error("Failed to update comment:", err);
     }
   };
-  
+
   const handleSelectChangeLinkIssue = (event, index) => {
     const updatedRows = [...rowsLinkIssue];
     updatedRows[index].selectValue = event.target.value;
@@ -200,7 +209,6 @@ const navigate = useNavigate();
   };
 
   const [isOpen, setIsOpen] = useState(false);
-
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
@@ -239,64 +247,8 @@ const navigate = useNavigate();
       .replace(/\s(.)/g, (match, group1) => group1.toUpperCase())
       .replace(/^(.)/, (match, group1) => group1.toLowerCase());
   }
-const fetchComments = async () => {
-  setLoading(true)
-  try {
-    const response = await axios.get(`http://localhost:8080/api/comments/getCommentByIssueId/${id}`);
-    const formatted = response.data.map((c) => ({
-      author: c.commentBy,
-      timestamp: new Date(c.timestamp).toLocaleString(),
-      text: c.comment,
-    }));
-    setComments(formatted);
-  } catch (error) {
-    console.error("Error fetching comments:", error);
-  }
-  finally{
-    setLoading(false)
-  }
-};
-const fetchSubTasksAndLinkedIssues = async () => {
-  setLoading(true)
-  try {
-    const res = await fetch(`http://localhost:8080/api/GetIssuedetailsbyParentCr/${id}`);
-    const data = await res.json();
-
-    const subtasks = data.filter(item => item.issueType !== "Bug");
-    const linked = data.filter(item => item.issueType === "Bug");
-
-    setSubTasks(subtasks);
-    setLinkedIssues(linked);
-  } catch (error) {
-    console.error("Error fetching subtasks/linked issues:", error);
-  }
-  finally{
-    setLoading(false)
-  }
-};
-
-const fetchDateDetails = async () => {
-  setLoading(true)
-  try {
-    const response = await axios.get(`http://localhost:8080/api/GetCrDateDetailsByIssueId/${id}`); // Replace with your actual endpoint
-    if (response.status === 200) {
-      setDateDetails(response.data);
-    } else {
-      console.error("Failed to fetch date details");
-    }
-  } catch (error) {
-    console.error("Error fetching date details:", error);
-  }finally{
-    setLoading(false)
-  }
-};
-
-
- const handleAddComment = async () => {
-  const editor = quillRef.current?.getEditor();
-  const commentText = editor?.getText()?.trim();
-  const commentHTML = editor?.root?.innerHTML?.trim();
   const fetchComments = async () => {
+    setLoading(true)
     try {
       const response = await axios.get(`http://localhost:8080/api/comments/getCommentByIssueId/${id}`);
       const formatted = response.data.map((c) => ({
@@ -308,7 +260,45 @@ const fetchDateDetails = async () => {
     } catch (error) {
       console.error("Error fetching comments:", error);
     }
+    finally {
+      setLoading(false)
+    }
   };
+  const fetchSubTasksAndLinkedIssues = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`http://localhost:8080/api/GetIssuedetailsbyParentCr/${id}`);
+      const data = await res.json();
+
+      const subtasks = data.filter(item => item.issueType !== "Bug");
+      const linked = data.filter(item => item.issueType === "Bug");
+
+      setSubTasks(subtasks);
+      setLinkedIssues(linked);
+    } catch (error) {
+      console.error("Error fetching subtasks/linked issues:", error);
+    }
+    finally {
+      setLoading(false)
+    }
+  };
+
+  const fetchDateDetails = async () => {
+    setLoading(true)
+    try {
+      const response = await axios.get(`http://localhost:8080/api/GetCrDateDetailsByIssueId/${id}`); // Replace with your actual endpoint
+      if (response.status === 200) {
+        setDateDetails(response.data);
+      } else {
+        console.error("Failed to fetch date details");
+      }
+    } catch (error) {
+      console.error("Error fetching date details:", error);
+    } finally {
+      setLoading(false)
+    }
+  };
+
   // Quill properties
   const modules = {
     toolbar: {
@@ -327,8 +317,7 @@ const fetchDateDetails = async () => {
     "blockquote", "list", "bullet", "indent", "link", "image"
   ];
 
-  const handleAddComment = async (e) => {
-    if (e) e.preventDefault();
+  const handleAddComment = async () => {
     const editor = quillRef.current?.getEditor();
     const commentText = editor?.getText()?.trim();
     const commentHTML = editor?.root?.innerHTML?.trim();
@@ -374,13 +363,14 @@ const fetchDateDetails = async () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [accordionFields, setAccordionFields] = useState({});
+  const fileInputRef = React.useRef(null);
+
   const handleFileChange = (e) => {
     setSelectedFiles(Array.from(e.target.files));
   };
 
   function getISTDateTime() {
     const now = new Date();
-
     // Format to 'yyyy-MM-ddTHH:mm:ss' using local time (which is already IST)
     const pad = (n) => n.toString().padStart(2, '0');
     const formatted =
@@ -397,13 +387,38 @@ const fetchDateDetails = async () => {
       pad(now.getSeconds());
 
     return formatted;
-  }
+  };
 
+  const formatDates = (dateString) => {
+    const now = new Date(dateString);
+    const options = {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Kolkata',
+    };
+    return now.toLocaleString('en-IN', options);
+  };
+
+  const formatSize = (bytes) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
 
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
 
     for (const file of selectedFiles) {
+      // if (file.size === 0) {
+      //   toast.error(`File: ${file.name} is empty and will not be uploaded.`);
+      //   continue;
+      // }
       const reader = new FileReader();
 
       reader.onload = async (e) => {
@@ -412,7 +427,7 @@ const fetchDateDetails = async () => {
         const payload = {
           issueId: id, // Replace with dynamic issueId if available
           filename: file.name,
-          uploadedBy: username, // Replace with dynamic username if needed
+          uploadedBy: username,
           uploadedTimestamp: getISTDateTime(),
           filedata: base64Data,
         };
@@ -455,31 +470,47 @@ const fetchDateDetails = async () => {
     setSelectedFiles([]);
   };
 
+  const handleDelete = async (issueId, filename) => {
+    try {
+      const response = await axios.delete(`http://localhost:8080/api/deleteDocument/${issueId}/${filename}`);
+      if (response.status === 200) {
+        setAttachments((prev) => prev.filter((file) => file.filename !== filename));
+        setUploadedFiles((prev) => prev.filter((file) => file.filename !== filename));
+        toast.success("Attachment deleted successfully");
+      } else {
+        toast.error("Failed to delete attachment");
+      }
+    } catch (error) {
+      console.error("Error deleting attachment:", error);
+      toast.error("Error deleting attachment");
+    }
+  };
 
   const handleRemove = (index) => {
     const updated = [...uploadedFiles];
     updated.splice(index, 1);
     setUploadedFiles(updated);
   };
+
   const handleAccordionChange = (e, field) => {
     const value = e.target.value;
     setAccordionFields((prev) => ({ ...prev, [field]: value }));
-  
+
     axios.post("http://localhost:8080/api/crDataPush", {
       issueId: id,
       [field]: value,
     });
   };
-  
+
   const handleAccordionEditableChange = (field, value) => {
     setAccordionFields((prev) => ({ ...prev, [field]: value }));
-  
+
     axios.post("http://localhost:8080/api/crDataPush", {
       issueId: id,
       [field]: value,
     });
   };
-  
+
   // Inline styles
   const styles = {
     container: {
@@ -536,7 +567,7 @@ const fetchDateDetails = async () => {
       .then((response) => {
         setIssueData(response.data);
         setStatus(response.data.status || "Open");
-  
+
         let initialFields;
         if (response.data.issueType === "Bug") {
           initialFields = {
@@ -565,12 +596,11 @@ const fetchDateDetails = async () => {
       .catch((error) => {
         console.error("Error fetching issue details:", error);
       });
-  
-    fetchComments();
+
     fetchComments();
   }, [id]);
-  
- 
+
+
   const fetchTransitions = () => {
     axios
       .post("http://localhost:8080/api/workflow/transitions", {
@@ -634,19 +664,19 @@ const fetchDateDetails = async () => {
     if (!dateStr) return "—";
     return new Date(dateStr).toLocaleDateString();
   };
-  
+
   const calculateDuration = (start, end) => {
     if (!start || !end) return "—";
     const diff = (new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24);
     return `${diff} days`;
   };
-  
+
   const calculateDelay = (plannedEnd, actualEnd) => {
     if (!plannedEnd || !actualEnd) return "—";
     const delay = (new Date(actualEnd) - new Date(plannedEnd)) / (1000 * 60 * 60 * 24);
     return delay > 0 ? `${delay} days` : "On time";
   };
-  
+
   // const handleAccordionChange = (e, field) => {
   //   setAccordionFields(prev => ({
   //     ...prev,
@@ -654,35 +684,43 @@ const fetchDateDetails = async () => {
   //   }));
   // };
   const fetchAttachments = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/getDocumentsByIssueId/${id}`);
-      if (!response.ok) {
+      const response = await axios.get(`http://localhost:8080/api/getDocumentsByIssueId/${id}`);
+      const data = response.data;
+      console.log(data);
 
-        throw new Error("Failed to fetch attachments");
-      }
-
-      const data = await response.json();
-      setAttachments(data);
+      const formatted = data.map((c) => ({
+        id: c.attachmentId,
+        author: c.uploadedBy,
+        filename: c.filename,
+        issueId: c.issueId,
+        size: c.fileSize,
+        dateAdded: c.uploadedTimestamp,
+        fileData: c.filedata
+      }));
+      console.log(formatted);
+      setAttachments(formatted);
     } catch (error) {
       console.error("Error fetching attachments:", error);
     } finally {
       setLoading(false);
     }
   };
+
   const handleFieldChange = (label, value) => {
     // Update field value in state
     setEditableFields((prev) => ({
       ...prev,
       [label]: value,
     }));
-  
+
     // Prepare request payload
     const payload = {
       issueId: id,
       [label.toLowerCase().replace(/\s+/g, "")]: value  // Convert label to camelCase-ish keys like "description"
     };
-  
+
     // Rename keys if needed to match exact backend expectation
     if (label === "Steps to Reproduce") payload.stepsToReproduce = value;
     else if (label === "Expected Output") payload.expectedOutput = value;
@@ -691,10 +729,10 @@ const fetchDateDetails = async () => {
     // else if (label === "In Scope") payload.inScope = value;
     // else if (label === "Out Scope") payload.outScope = value;
     else if (label === "Business Need Benefits Details") payload.businessNeedBenefitsDetails = value;
-  
+
     // Remove unwanted derived key (from label.toLowerCase())
     // delete payload[label.toLowerCase().replace(/\s+/g, "")];
-  
+
     // Send to API
     axios.post("http://localhost:8080/api/crDataPush", payload)
       .then(() => {
@@ -704,7 +742,7 @@ const fetchDateDetails = async () => {
         console.error(`Error updating ${label}:`, err);
       });
   };
-  
+
   // Populate from API once it's loaded
   useEffect(() => {
     if (issueData) {
@@ -714,15 +752,17 @@ const fetchDateDetails = async () => {
         priority: issueData.priority || "",
         primaryBA: issueData.primaryBA || ""
       });
+      // Fetch attachments immediately when issueData changes (issue selected)
+      fetchAttachments();
     }
   }, [issueData]);
   if (loading) return <Loading />;
   return (
 
     <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
-      <Card flexDirection="column" w="100%" px="25px" mb="20px" overflow="hidden">
+      <Card flexDirection="column" w="100%" px="15px" mb="20px" overflow="hidden">
         <Popup isOpen={isPopupOpen} data={message} onClose={handleClosePopup} />
-        <SubtaskPopup isOpen={isSubtaskPopupOpen} onClose={handleSubtaskClosePopup} data={issueData}/>
+        <SubtaskPopup isOpen={isSubtaskPopupOpen} onClose={handleSubtaskClosePopup} data={issueData} />
         <div style={{ display: "flex", width: "100%" }}>
 
           {/* Left Section (70%) */}
@@ -739,6 +779,30 @@ const fetchDateDetails = async () => {
                   <Portal>
                     <MenuList>
                       {/* <MenuItem>Attachment</MenuItem> */}
+                      <MenuItem
+                        onClick={() => {
+                          const fileInput = document.createElement('input');
+                          fileInput.type = 'file';
+                          fileInput.multiple = true;
+                          fileInput.style.display = 'none';
+                          document.body.appendChild(fileInput);
+                          fileInput.click();
+
+                          fileInput.addEventListener('change', async (event) => {
+                            if (event.target.files.length > 0) {
+                              try {
+                                handleFileChange(event);
+                                await handleUpload();
+                              } catch (error) {
+                                console.error('Error uploading files:', error);
+                              }
+                            }
+                            document.body.removeChild(fileInput);
+                          });
+                        }}
+                      >
+                        Attachment
+                      </MenuItem>
                       <MenuItem onClick={() => {
                         handleSubtaskOpenPopup();
                       }}>Subtask</MenuItem>
@@ -751,54 +815,54 @@ const fetchDateDetails = async () => {
 
               {/* Editable Sections */}
               <div style={{ margin: "5px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              {issueData.issueType === "Bug" ? (
-  ["Description", "Steps to Reproduce", "Expected Output", "Actual Output"].map((label, index) => (
-    <div key={index} style={{ margin: "5px" }}>
-      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
-      <div>
-        <Editable
-          textAlign="start"
-          value={editableFields[label] || ""}
-          onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
-  onChange={(val) =>
-    setEditableFields((prev) => ({
-      ...prev,
-      [label]: val,
-    }))
-  }
-        >
-          <EditablePreview />
-          <EditableInput />
-        </Editable>
-      </div>
-    </div>
-  ))
+                {issueData.issueType === "Bug" ? (
+                  ["Description", "Steps to Reproduce", "Expected Output", "Actual Output"].map((label, index) => (
+                    <div key={index} style={{ margin: "5px" }}>
+                      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
+                      <div>
+                        <Editable
+                          textAlign="start"
+                          value={editableFields[label] || ""}
+                          onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
+                          onChange={(val) =>
+                            setEditableFields((prev) => ({
+                              ...prev,
+                              [label]: val,
+                            }))
+                          }
+                        >
+                          <EditablePreview />
+                          <EditableInput />
+                        </Editable>
+                      </div>
+                    </div>
+                  ))
 
-) : (
-  ["Description",  "Business Need Benefits Details"].map((label, index) => (
-    <div key={index} style={{ margin: "5px" }}>
-      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
-      <div>
-        <Editable
-          textAlign="start"
-          value={editableFields[label] || ""}
-          onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
-          onChange={(val) =>
-            setEditableFields((prev) => ({
-              ...prev,
-              [label]: val,
-            }))
-          }
-        >
-          <EditablePreview />
-          <EditableInput />
-        </Editable>
-      </div>
-    </div>
-  ))
-)}
+                ) : (
+                  ["Description", "Business Need Benefits Details"].map((label, index) => (
+                    <div key={index} style={{ margin: "5px" }}>
+                      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
+                      <div>
+                        <Editable
+                          textAlign="start"
+                          value={editableFields[label] || ""}
+                          onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
+                          onChange={(val) =>
+                            setEditableFields((prev) => ({
+                              ...prev,
+                              [label]: val,
+                            }))
+                          }
+                        >
+                          <EditablePreview />
+                          <EditableInput />
+                        </Editable>
+                      </div>
+                    </div>
+                  ))
+                )}
 
-                <div style={{ margin: "5px" }}>
+                {/* <div style={{ margin: "5px" }}>
                   <label style={{ fontSize: "18px", fontWeight: 500 }}>Attachments</label>
                   <div>
                     <input
@@ -814,7 +878,7 @@ const fetchDateDetails = async () => {
 
 
                   </div>
-                </div>
+                </div> */}
 
                 {/* Subtask Section */}
                 {/* <div style={{ margin: "5px" }}>
@@ -911,8 +975,38 @@ const fetchDateDetails = async () => {
 
                 {/* Attachment Modal */}
                 <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} isCentered>
-                </div>
-
+                  <ModalOverlay />
+                  <ModalContent
+                    maxW={{ base: "90vw", sm: "80vw", md: "70vw", lg: "60vw", xl: "50vw" }}
+                  >
+                    <ModalHeader>{previewFile?.filename}</ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                      {previewFile?.type === "pdf" ? (
+                        <iframe
+                          src={previewFile.blobUrl}
+                          width="100%"
+                          height="500px"
+                          title={previewFile.filename}
+                          style={{ borderRadius: "8px", border: "1px solid #ddd" }}
+                        />
+                      ) : ["png", "jpg", "jpeg", "gif", "webp"].includes(previewFile?.type) ? (
+                        <Image
+                          src={previewFile.blobUrl}
+                          alt={previewFile.filename}
+                          maxW="100%"
+                          maxH="500px"
+                          borderRadius="md"
+                        />
+                      ) : (
+                        <Text>Preview not available for this file type.</Text>
+                      )}
+                    </ModalBody>
+                    <ModalFooter>
+                      <Button onClick={() => setIsPreviewOpen(false)}>Close</Button>
+                    </ModalFooter>
+                  </ModalContent>
+                </Modal>
                 <div style={{ margin: "5px" }}>
                   <label style={{ fontSize: "18px", fontWeight: 500 }}>Activity</label>
 
@@ -928,65 +1022,12 @@ const fetchDateDetails = async () => {
                       if (index === 0) {
                         fetchComments();
                       }
-                    }}
-                  >
-                    {/* Preview Modal */}
-                    <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} isCentered>
-                      <ModalOverlay />
-                      <ModalContent
-                        maxW={{ base: "90vw", sm: "80vw", md: "70vw", lg: "60vw", xl: "50vw" }}
-                      >
-                        <ModalHeader>{previewFile?.filename}</ModalHeader>
-                        <ModalCloseButton />
-                        <ModalBody>
-                          {previewFile?.type === "pdf" ? (
-                            <iframe
-                              src={previewFile.blobUrl}
-                              width="100%"
-                              height="500px"
-                              title={previewFile.filename}
-                              style={{ borderRadius: "8px", border: "1px solid #ddd" }}
-                            />
-                          ) : ["png", "jpg", "jpeg", "gif", "webp"].includes(previewFile?.type) ? (
-                            <Image
-                              src={previewFile.blobUrl}
-                              alt={previewFile.filename}
-                              maxW="100%"
-                              maxH="500px"
-                              borderRadius="md"
-                            />
-                          ) : (
-                            <Text>Preview not available for this file type.</Text>
-                          )}
-                        </ModalBody>
-                        <ModalFooter>
-                          <Button onClick={() => setIsPreviewOpen(false)}>Close</Button>
-                        </ModalFooter>
-                      </ModalContent>
-                    </Modal>
-                <div style={{ margin: "5px" }}>
-                  <label style={{ fontSize: "18px", fontWeight: 500 }}>Activity</label>
 
-                  <Tabs
-                    index={tabIndex}
-                    onChange={(index) => {
-                      setTabIndex(index);
-
-                      // If Attachments tab is selected (index 2)
-                      if (index === 2) {
-                        fetchAttachments();
-                      }
-                      if(index === 0){
-                        fetchComments();
-                      }
-                    
-                      if (index === 3) fetchDateDetails(); 
+                      if (index === 3) fetchDateDetails();
                       if (index === 4 || index === 1) fetchSubTasksAndLinkedIssues();
                     }}
                   >
                     {/* Preview Modal */}
-                    
-
 
                     {/* <TabList>
                       <Tab>
@@ -994,7 +1035,7 @@ const fetchDateDetails = async () => {
                         Comments
                       </Tab>
                       <Tab>
-                        <LuFolder style={{marginRight: '2px'}}/>
+                        <LuFolder />
                         Link Issues
                       </Tab>
                       <Tab>
@@ -1004,382 +1045,41 @@ const fetchDateDetails = async () => {
                       <Tab><LuCalendarClock /> Dates</Tab>
                       <Tab><LuListChecks /> Subtasks</Tab>
 
-                    </TabList>
+                    </TabList> */}
 
-                    <TabPanels>
-                    <TabPanel>
-  {/* New Comment Input */}
-  <ReactQuill ref={quillRef} theme="snow" value={editorValue} onChange={setEditorValue} />
-  <Button colorScheme="blue" mt={3} onClick={handleAddComment}>Submit Comment</Button>
-                      <TabPanel>
-                        
-                        <ReactQuill ref={quillRef} theme="snow" />
-                        <Button colorScheme="blue" mt={3} onClick={handleAddComment}>Submit Comment</Button>
-
-  {/* Comment List */}
-  <VStack mt={5} align="stretch" spacing={4}>
-    <Text fontSize="lg" fontWeight="bold">Comments:</Text>
-    {comments.length === 0 ? (
-      <Text>No comments yet</Text>
-    ) : (
-      comments.map((comment, index) => (
-        <Box key={index} p={4} borderWidth={1} borderRadius="lg" bg="gray.50">
-          <HStack mb={2} justify="space-between">
-            <HStack>
-              <Avatar name={comment.author} size="sm" />
-              <Box>
-                <Text fontWeight="bold">{comment.author}</Text>
-                <Text fontSize="sm" color="gray.500">{comment.timestamp}</Text>
-              </Box>
-            </HStack>
-            {comment.author === username && (
-              <IconButton
-                size="sm"
-                icon={<EditIcon />}
-                aria-label="Edit comment"
-                onClick={() => handleEditClick(index)}
-              />
-            )}
-          </HStack>
-
-          {isEditing && editIndex === index ? (
-            <>
-              <ReactQuill theme="snow" value={editValue} onChange={setEditValue} />
-              <Button mt={2} colorScheme="green" size="sm" onClick={handleSaveEdit}>Save</Button>
-            </>
-          ) : (
-            <Box dangerouslySetInnerHTML={{ __html: comment.text }} />
-          )}
-
-          <Divider mt={3} />
-        </Box>
-      ))
-    )}
-  </VStack>
-</TabPanel>
-
-                        
-                        <VStack mt={5} align="stretch" spacing={4}>
-                          <Text fontSize="sm" fontWeight="bold">Comments:</Text>
-                          {comments.length === 0 ? (
-                            <Text>No comments yet</Text>
-                          ) : (
-                            comments.map((comment, index) => (
-                              <Box key={index} p={4} borderWidth={1} borderRadius="lg" bg="gray.50">
-                                <HStack mb={2}>
-                                  <Avatar name={comment.author} size="sm" />
-                                  <Box>
-                                    <Text fontWeight="bold">{comment.author}</Text>
-                                    <Text fontSize="sm" color="gray.500">{comment.timestamp}</Text>
-                                  </Box>
-                                </HStack>
-                                <Box dangerouslySetInnerHTML={{ __html: comment.text }} />
-                                <Divider mt={3} />
-                              </Box>
-                            ))
-                          )}
-                        </VStack>
-                      </TabPanel>
-                      <TabPanel>
-  <Box maxH="400px" overflowY="auto" border="1px solid #E2E8F0" borderRadius="md" p={3}>
-    <Text fontWeight="bold" fontSize="md" mb={2}>Linked Work Items</Text>
-    <Text fontSize="sm" mb={3} color="gray.500">is blocked by</Text>
-
-    <VStack spacing={3} align="stretch">
-      {linkedIssues.map((issue) => (
-        <Flex
-          key={issue.id}
-          p={3}
-          borderRadius="md"
-          bg="white"
-          boxShadow="sm"
-          align="center"
-          justify="space-between"
-          _hover={{ boxShadow: "md", cursor: "pointer" }}
-        >
-          {/* Left Section: Issue Info */}
-          <Flex align="center" gap={3}>
-            <Icon as={FaBug} color="red.500" boxSize={5} />
-            <Box>
-              <Text
-                onClick={() => window.location.href = `/admin/view/${issue.issueId}`}
-                color="blue.600"
-                fontWeight="bold"
-                _hover={{ textDecoration: "underline" }}
-              >
-                {issue.issueId}
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                {issue.summary.length > 80
-                  ? issue.summary.slice(0, 77) + "..."
-                  : issue.summary}
-              </Text>
-            </Box>
-          </Flex>
-
-          {/* Right Section: Assignee + Status */}
-          <Flex align="center" gap={2}>
-            <Tooltip label={issue.assignee} fontSize="sm" hasArrow>
-              <Avatar size="sm" icon={<FaUserCircle />} />
-            </Tooltip>
-            <Tag
-              size="sm"
-              colorScheme={
-                issue.status === "Closed" ? "green" :
-                issue.status === "In Progress" ? "yellow" :
-                issue.status === "Open" ? "blue" :
-                "gray"
-              }
-            >
-              {issue.status}
-            </Tag>
-          </Flex>
-        </Flex>
-      ))}
-    </VStack>
-  </Box>
-</TabPanel>
-
-
-
-                      <TabPanel>
-                        {attachments.length === 0 ? (
-                          <Text>No attachments</Text>
-                        ) : (
-                          <VStack align="stretch" spacing={5}>
-                            {["TSD", "FSD", "Others"].map((category) => {
-                              const filtered = attachments.filter((att) => {
-                                const name = att.filename.toLowerCase();
-                                if (category === "TSD") return name.includes("tsd");
-                                if (category === "FSD") return name.includes("fsd");
-                                return !name.includes("tsd") && !name.includes("fsd");
-                              });
-
-                              if (filtered.length === 0) return null;
-
-                              return (
-                                <Box key={category}>
-                                  <HStack mb={2}>
-                                    <Icon as={LuFolder} color="blue.500" />
-                                    <Text fontWeight="bold" fontSize="lg">
-                                      {category} Documents
-                                    </Text>
-                                  </HStack>
-                                  <VStack spacing={3} align="stretch">
-                                    {filtered.map((att) => {
-                                      const fileType = getFileType(att.filename);
-                                      const mimeType = getMimeType(fileType);
-                                      const blobUrl = `data:${mimeType};base64,${att.filedata}`;
-                                      const isImage = mimeType.startsWith("image");
-
-                                      const isPDF = mimeType === "application/pdf";
-
-                                      return (
-                                        <HStack
-                                          key={att.attachmentId}
-                                          p={2}
-                                          bg="gray.50"
-                                          borderRadius="md"
-                                          justify="space-between"
-                                        >
-                                          {isImage ? (
-                                            <Image
-                                              boxSize="50px"
-                                              src={blobUrl}
-                                              alt={att.filename}
-                                              objectFit="cover"
-                                              borderRadius="md"
-                                            />
-                                          ) : (
-                                            <Icon as={LuFolder} boxSize={6} color="gray.400" />
-                                          )}
-
-                                          <VStack align="start" flex="1" spacing={0}>
-                                            <Text fontWeight="medium">{att.filename}</Text>
-                                            <Text fontSize="sm" color="gray.500">
-                                              {att.uploadedBy} • {new Date(att.uploadedTimestamp).toLocaleString()}
-                                            </Text>
-                                          </VStack>
-
-                                          <HStack spacing={2}>
-                                            <a href={blobUrl} download={att.filename}>
-                                              <Button size="sm">Download</Button>
-                                            </a>
-                                            <Button
-                                              size="sm"
-                                              onClick={() => {
-                                                setPreviewFile({
-                                                  filename: att.filename,
-                                                  blobUrl,
-                                                  type: fileType,
-                                                  mimeType,
-                                                });
-                                                setIsPreviewOpen(true);
-                                              }}
-                                            >
-                                              View
-                                            </Button>
-                                          </HStack>
-                                        </HStack>
-                                      );
-                                    })}
-
-                                  </VStack>
-                                </Box>
-                              );
-                            })}
-                          </VStack>
-                        )}
-                      </TabPanel>
-                    
-
-                      <TabPanel>
-      {/* Dates tab panel content */}
-      <Table variant="simple" size="sm">
-        <Thead bg="gray.100">
-          <Tr>
-            <Th>Phase</Th>
-            <Th>Planned Start</Th>
-            <Th>Planned End</Th>
-            <Th>Actual Start</Th>
-            <Th>Actual End</Th>
-            <Th>Duration</Th>
-            <Th>Delay</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {[
-            {
-              title: "FSD",
-              plannedStart: dateDetails?.plannedFSDStartDate,
-              plannedEnd: dateDetails?.plannedFSDEndDate,
-              actualStart: null,
-              actualEnd: null,
-            },
-            {
-              title: "QA Testing",
-              plannedStart: dateDetails?.plannedQaTestingStartDate,
-              plannedEnd: dateDetails?.plannedQaTestingEndDate,
-              actualStart: dateDetails?.actualQaTestingStartDate,
-              actualEnd: dateDetails?.actualQaTestingEndDate,
-            },
-            {
-              title: "UAT",
-              plannedStart: dateDetails?.plannedUatStartDate,
-              plannedEnd: dateDetails?.plannedUatEndDate,
-              actualStart: null,
-              actualEnd: null,
-            },
-            {
-              title: "Go Live",
-              plannedStart: dateDetails?.plannedGoLiveDate,
-              plannedEnd: null,
-              actualStart: null,
-              actualEnd: dateDetails?.actualGoLiveDate,
-            },
-          ].map((row) => {
-            const formatDate = (d) => d ? new Date(d).toLocaleDateString() : "-";
-            const duration = (s, e) => (s && e) ? `${(new Date(e) - new Date(s)) / (1000 * 3600 * 24)} day(s)` : "-";
-            const delay = (planned, actual) => (planned && actual)
-              ? `${(new Date(actual) - new Date(planned)) / (1000 * 3600 * 24)} day(s)`
-              : "-";
-
-            return (
-              <Tr key={row.title}>
-                <Td>{row.title}</Td>
-                <Td>{formatDate(row.plannedStart)}</Td>
-                <Td>{formatDate(row.plannedEnd)}</Td>
-                <Td>{formatDate(row.actualStart)}</Td>
-                <Td>{formatDate(row.actualEnd)}</Td>
-                <Td>{duration(row.plannedStart, row.plannedEnd)}</Td>
-                <Td>{delay(row.plannedEnd, row.actualEnd)}</Td>
-              </Tr>
-            );
-          })}
-        </Tbody>
-      </Table>
-      </TabPanel>
-      <TabPanel>
-  <Box maxH="500px" overflowY="auto" p={2}>
-    <Text fontWeight="bold" fontSize="md" mb={3}>Subtasks</Text>
-
-    <VStack spacing={4} align="stretch">
-      {subTasks.map((task) => {
-        let typeIcon;
-        switch (task.issueType.toLowerCase()) {
-          case 'maintenance':
-            typeIcon = <MdAttachMoney color="green" size={20} />;
-            break;
-          case 'qa':
-            typeIcon = <PiTestTubeFill color="purple" size={20} />;
-            break;
-          default:
-            typeIcon = <MdAssignment color="blue" size={20} />;
-        }
-
-        const priorityIcon = <FaArrowUp color="red" />;
-        const statusColor =
-          task.status.toLowerCase().includes("close") ? "green.100"
-          : task.status.toLowerCase().includes("development") ? "blue.100"
-          : "gray.100";
-
-        return (
-          <Flex
-            key={task.id}
-            p={4}
-            bg="white"
-            borderRadius="md"
-            boxShadow="sm"
-            justify="space-between"
-            align="center"
-            _hover={{ boxShadow: "md", cursor: "pointer" }}
-            onClick={() => window.location.href = `/admin/view/${task.issueId}`}
-          >
-            {/* Left section with icon, ID, Summary */}
-            <HStack spacing={4}>
-              <Box>{typeIcon}</Box>
-              <Box>
-                <Text fontWeight="bold" color="blue.600">
-                  {task.issueId}
-                </Text>
-                <Text fontSize="sm" color="gray.600" noOfLines={1}>
-                  {task.summary}
-                </Text>
-              </Box>
-            </HStack>
-
-            {/* Right section with Priority, Assignee (Avatar only), Status */}
-            <HStack spacing={4}>
-              <Box>{priorityIcon}</Box>
-              <Tooltip label={task.assignee} fontSize="sm" hasArrow>
-                <Avatar size="sm" icon={<FaUserCircle />} name={task.assignee} />
-              </Tooltip>
-              <Tag bg={statusColor} color="gray.800" fontWeight="bold" px={3} py={1}>
-                {task.status}
-              </Tag>
-            </HStack>
-          </Flex>
-        );
-      })}
-    </VStack>
-  </Box>
-</TabPanel>
-
-
-
-
-
-
-                    </TabPanels> */}
-
-                    {/* New comment */}
-                    <Box maxW="700px" mx="auto" >
-                      {/* <Heading size="md" mb={4}>Activity</Heading> */}
-                      <Tabs mb={4} variant="unstyled" defaultIndex={1}>
-                        <TabList border="1px solid #dfe1e6" borderRadius="6px" bg="white" w="fit-content" px={1} py={1}>
-                          {["Comments", "Link Issues", "Attachments"].map((label, idx) => (
+                    <Box m={0}>
+                      <Tabs variant="unstyled" defaultIndex={1} maxW="800px">
+                        <TabList border="1px solid #dfe1e6" borderRadius="6px" bg="white" w="fit-content" mb={0} pb={0}>
+                          {[
+                            { label: "Comments", icon: LuUser },
+                            { label: "Link Issues", icon: LuFolder },
+                            {
+                              label: (
+                                <>
+                                  Attachments{" "}
+                                  {attachments.length > 0 && (
+                                    <Box
+                                      borderRadius="full"
+                                      bg="#E5E7EB"
+                                      color="#4A5568"
+                                      fontSize="xs"
+                                      fontWeight="medium"
+                                      px={2}
+                                      py={0.5}
+                                      ml={1}
+                                    >
+                                      {attachments.length}
+                                    </Box>
+                                  )}
+                                </>
+                              ),
+                              icon: LuPaperclip,
+                            },
+                            { label: "Dates", icon: LuCalendarClock },
+                            { label: "SubTasks", icon: LuListChecks }
+                          ].map((tab, idx) => (
                             <Tab
-                              key={label}
+                              key={tab.label}
                               fontSize="sm"
                               fontWeight="normal"
                               px={4}
@@ -1395,13 +1095,21 @@ const fetchDateDetails = async () => {
                               }}
                               _focus={{ boxShadow: "none" }}
                               _hover={{ bg: "#F4F5F7" }}
-                            >{label}</Tab>
+                              display="flex"
+                              alignItems="center"
+                              gap={1}
+                            ><Icon as={tab.icon} boxSize={4} />
+                              {tab.label}
+                            </Tab>
                           ))}
-                          <Tab ></Tab>
+                          {/* <Tab ></Tab> */}
                         </TabList>
-                        <TabPanels>
-                          <TabPanel>
-                            <HStack align="flex-start" spacing={3} mb={6}>
+                        <TabPanels maxW="620px">
+                          <TabPanel p='12px 0 12px' >
+                            {/* New Comment Input
+                            <ReactQuill ref={quillRef} theme="snow" value={editorValue} onChange={setEditorValue} />
+                            <Button colorScheme="blue" mt={3} onClick={handleAddComment}>Submit Comment</Button> */}
+                            <HStack align="flex-start" spacing={3} mb={2}>
                               <Avatar name={username} size="sm" />
                               <Box flex="1">
                                 {!showEditor ? (
@@ -1420,10 +1128,10 @@ const fetchDateDetails = async () => {
                                       theme="snow"
                                       value={value}
                                       onChange={setValue}
-                                      placeholder='Type your comment'
+                                      placeholder='Type your comment or @ to mention or notify someone.'
                                       modules={modules}
                                       formats={formats}
-                                      style={{ minHeight: 80, fontSize: "0.95rem" }}
+                                      style={{ minHeight: 80, fontSize: "0.7rem" }}
                                     />
                                     <HStack>
                                       <Button colorScheme='blue' size="sm" onClick={handleAddComment}>
@@ -1442,43 +1150,436 @@ const fetchDateDetails = async () => {
                                     <Button size="xs" variant="outline">Suggest a reply...</Button>
                                   </HStack>
                                 )} */}
-                                {/* {!showEditor && (
-                                  <Text fontSize="xs" color="gray.500" mt={1}>
-                                    comments
-                                  </Text>
-                                )} */}
                               </Box>
                             </HStack>
-                            <VStack align="stretch" spacing={6} ml={0}>
-                              {comments.map((comment) => (
-                                <HStack align="flex-start" key={comment.id} spacing={3}>
+                            {/* Comment List */}
+                            <VStack mt={2} align="stretch" spacing={4}
+                              overflowY="auto"
+                              p={3}
+                              bg="white"
+                            >
+                              {comments.map((comment, index) => (
+                                <HStack align="flex-start" key={index} spacing={3}
+                                  borderBottom="1px solid #E2E8F0"
+                                >
                                   <Avatar name={comment.author} size="sm" />
                                   <Box flex="1">
                                     <Text fontWeight="bold">{comment.author}</Text>
                                     <Text fontSize="xs" color="gray.500" mb={1}>
                                       {comment.timestamp}
                                     </Text>
-                                    <Box className='q1-editor'
-                                      dangerouslySetInnerHTML={{ __html: comment.text }} p={0} mb={2} />
-                                    <HStack spacing={3} fontSize="sm" color="gray.500">
-                                      {/* Only show Edit/Delete for the logged-in user's comments */}
-                                      {/* {comment.author === username ? (
-                                        <>
-                                          <Button size="xs" variant="link">Reply</Button>
-                                          <Button size="xs" variant="link">Edit</Button>
-                                          <Button size="xs" variant="link">Delete</Button>
-                                        </>
-                                      ) : ( */}
-                                      <Button size="xs" variant="link">Reply</Button>
-                                      {/* )} */}
+                                    {/* Edit Mode */}
+                                    {isEditing && editIndex === index ? (
+                                      <Box>
+                                        <ReactQuill
+                                          ref={quillRef}
+                                          className="custom-quill"
+                                          onChange={setEditValue}
+                                          modules={modules}
+                                          formats={formats}
+                                          theme='snow'
+                                          style={{ minHeight: 80, fontSize: "0.7rem" }}
+                                        />
+                                        <HStack mt={2}>
+                                          <Button colorScheme='blue' size="xs" onClick={handleSaveEdit}>Save</Button>
+                                          <Button size="xs" variant="ghost" onClick={() => { setIsEditing(false); setEditIndex(null); }}>Cancel</Button>
+                                        </HStack>
+                                      </Box>
+                                    ) : (
+                                      <Box className='q1-editor'
+                                        dangerouslySetInnerHTML={{ __html: comment.text }} p={0} mb={2} />
+                                    )}
+                                    <HStack spacing={3} fontSize="sm" color="gray.500" pb={2}>
+                                      {!(isEditing && editIndex === index) && (
+                                        <Button size="xs" variant="link">Reply</Button>
+                                      )}
+                                      {comment.author === username && !isEditing && (
+                                        <Button size="xs" variant="link" onClick={() => handleEditClick(index)}>Edit</Button>
+                                      )}
                                     </HStack>
                                   </Box>
                                 </HStack>
                               ))}
                             </VStack>
                           </TabPanel>
-                          <TabPanel />
-                          <TabPanel />
+
+                          <TabPanel p={0}>
+                            <Box maxH="400px" overflowY="auto" border="1px solid #E2E8F0" borderRadius="md" p={3}>
+                              <Text fontWeight="bold" fontSize="md" mb={2}>Linked Work Items</Text>
+                              <Text fontSize="sm" mb={3} color="gray.500">is blocked by</Text>
+
+                              <VStack spacing={3} align="stretch">
+                                {linkedIssues.map((issue) => (
+                                  <Flex
+                                    key={issue.id}
+                                    p={3}
+                                    borderRadius="md"
+                                    bg="white"
+                                    boxShadow="sm"
+                                    align="center"
+                                    justify="space-between"
+                                    _hover={{ boxShadow: "md", cursor: "pointer" }}
+                                  >
+                                    {/* Left Section: Issue Info */}
+                                    <Flex align="center" gap={3}>
+                                      <Icon as={FaBug} color="red.500" boxSize={5} />
+                                      <Box>
+                                        <Text
+                                          onClick={() => window.location.href = `/admin/view/${issue.issueId}`}
+                                          color="blue.600"
+                                          fontWeight="bold"
+                                          _hover={{ textDecoration: "underline" }}
+                                        >
+                                          {issue.issueId}
+                                        </Text>
+                                        <Text fontSize="sm" color="gray.600">
+                                          {issue.summary.length > 80
+                                            ? issue.summary.slice(0, 77) + "..."
+                                            : issue.summary}
+                                        </Text>
+                                      </Box>
+                                    </Flex>
+
+                                    {/* Right Section: Assignee + Status */}
+                                    <Flex align="center" gap={2}>
+                                      <Tooltip label={issue.assignee} fontSize="sm" hasArrow>
+                                        <Avatar size="sm" icon={<FaUserCircle />} />
+                                      </Tooltip>
+                                      <Tag
+                                        size="sm"
+                                        colorScheme={
+                                          issue.status === "Closed" ? "green" :
+                                            issue.status === "In Progress" ? "yellow" :
+                                              issue.status === "Open" ? "blue" :
+                                                "gray"
+                                        }
+                                      >
+                                        {issue.status}
+                                      </Tag>
+                                    </Flex>
+                                  </Flex>
+                                ))}
+                              </VStack>
+                            </Box>
+                          </TabPanel>
+                          {/* <TabPanel>
+                            {
+                              <VStack align="stretch" spacing={5}>
+                                {["TSD", "FSD", "Others"].map((category) => {
+                                  const filtered = attachments.filter((att) => {
+                                    const name = att.filename.toLowerCase();
+                                    if (category === "TSD") return name.includes("tsd");
+                                    if (category === "FSD") return name.includes("fsd");
+                                    return !name.includes("tsd") && !name.includes("fsd");
+                                  });
+
+                                  if (filtered.length === 0) return null;
+
+                                  return (
+                                    <Box key={category}>
+                                      <HStack mb={2}>
+                                        <Icon as={LuFolder} color="blue.500" />
+                                        <Text fontWeight="bold" fontSize="lg">
+                                          {category} Documents
+                                        </Text>
+                                      </HStack>
+                                      <VStack spacing={3} align="stretch">
+                                        {filtered.map((att) => {
+                                          const fileType = getFileType(att.filename);
+                                          const mimeType = getMimeType(fileType);
+                                          const blobUrl = `data:${mimeType};base64,${att.filedata}`;
+                                          const isImage = mimeType.startsWith("image");
+
+                                          const isPDF = mimeType === "application/pdf";
+
+                                          return (
+                                            <HStack
+                                              key={att.attachmentId}
+                                              p={2}
+                                              bg="gray.50"
+                                              borderRadius="md"
+                                              justify="space-between"
+                                            >
+                                              {isImage ? (
+                                                <Image
+                                                  boxSize="50px"
+                                                  src={blobUrl}
+                                                  alt={att.filename}
+                                                  objectFit="cover"
+                                                  borderRadius="md"
+                                                />
+                                              ) : (
+                                                <Icon as={LuFolder} boxSize={6} color="gray.400" />
+                                              )}
+
+                                              <VStack align="start" flex="1" spacing={0}>
+                                                <Text fontWeight="medium">{att.filename}</Text>
+                                                <Text fontSize="sm" color="gray.500">
+                                                  {att.uploadedBy} • {new Date(att.uploadedTimestamp).toLocaleString()}
+                                                </Text>
+                                              </VStack>
+
+                                              <HStack spacing={2}>
+                                                <a href={blobUrl} download={att.filename}>
+                                                  <Button size="sm">Download</Button>
+                                                </a>
+                                                <Button
+                                                  size="sm"
+                                                  onClick={() => {
+                                                    setPreviewFile({
+                                                      filename: att.filename,
+                                                      blobUrl,
+                                                      type: fileType,
+                                                      mimeType,
+                                                    });
+                                                    setIsPreviewOpen(true);
+                                                  }}
+                                                >
+                                                  View
+                                                </Button>
+                                              </HStack>
+                                            </HStack>
+                                          );
+                                        })}
+
+                                      </VStack>
+                                    </Box>
+                                  );
+                                })}
+                              </VStack>
+                            }
+                          </TabPanel> */}
+                          <TabPanel p="7px 0">
+                            <Table variant="simple" mt={0}>
+                              <Thead>
+                                <Tr
+                                  sx={{
+                                    '& > th': {
+                                      borderBottom: '2px solid',
+                                      borderColor: 'gray.200',
+                                    },
+                                    '& > th:not(:last-child)': {
+                                      textAlign: "start",
+                                      padding: "4px 8px",
+                                      _hover: {
+                                        bg: 'gray.400',
+                                        cursor: 'pointer',
+                                      },
+                                    },
+                                  }}
+                                >
+                                  <Th w="40%">Name</Th>
+                                  <Th w="15%">Size</Th>
+                                  <Th w="30%">Date Added</Th>
+                                  <Th textAlign="end" w="15%">
+
+                                  </Th>
+                                </Tr>
+                              </Thead>
+                              <Tbody
+                                sx={{
+                                  '& > tr': {
+                                    fontSize: '0.9rem',
+                                    _hover: {
+                                      bg: 'gray.200',
+                                      cursor: 'pointer',
+                                    }
+                                  }
+                                }}
+                              >
+                                {attachments.map((attachment) => {
+                                  const fileType = getFileType(attachment.filename);
+                                  const mimeType = getMimeType(fileType);
+                                  const blobUrl = `data:${mimeType};base64,${attachment.fileData}`;
+                                  return (
+                                    <Tr key={attachment.id}
+                                      sx={{
+                                        '& > td': {
+                                          padding: '4px 8px 4px 8px',
+                                          textAlign: 'start'
+                                        },
+                                      }}
+                                    >
+                                      <Td>
+                                        <HStack>
+                                          {(() => {
+                                            const ext = getFileType(attachment.filename);
+                                            const mimeType = getMimeType(ext);
+                                            if (mimeType.startsWith("image/")) {
+                                              return <Icon as={LuImage} boxSize={5} color="blue.600" />;
+                                            } else if (mimeType === "text/plain") {
+                                              return <Icon as={LuFileText} boxSize={5} color="blue.600" />;
+                                            } else {
+                                              return <Icon as={LuFile} boxSize={5} color="blue.600" />;
+                                            }
+                                          })()}
+                                          <Tooltip label={`Uploaded by: ${attachment.author}`} placement="bottom" hasArrow>
+                                            <Text ml={2} cursor="pointer">
+                                              {attachment.filename}
+                                            </Text>
+                                          </Tooltip>
+                                        </HStack>
+                                      </Td>
+                                      <Td>{formatSize(attachment.size)}</Td>
+                                      <Td>{formatDates(attachment.dateAdded)}</Td>
+                                      <Td textAlign="cwn">
+                                        <IconButton
+                                          aria-label="Delete Attachment"
+                                          icon={<LuTrash />}
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleDelete(attachment.issueId, attachment.filename)}
+                                          mr={2}
+                                        />
+                                        <IconButton
+                                          aria-label="Download Attachment"
+                                          icon={<LuDownload />}
+                                          size="sm"
+                                          variant="ghost"
+                                          as="a"
+                                          href={blobUrl}
+                                          download={attachment.filename}
+                                        />
+                                      </Td>
+                                    </Tr>
+                                  )
+                                }
+                                )}
+                              </Tbody>
+                            </Table>
+                          </TabPanel>
+
+                          <TabPanel p={0}>
+                            {/* Dates tab panel content */}
+                            <Table variant="simple" size="sm">
+                              <Thead bg="gray.100">
+                                <Tr>
+                                  <Th>Phase</Th>
+                                  <Th>Planned Start</Th>
+                                  <Th>Planned End</Th>
+                                  <Th>Actual Start</Th>
+                                  <Th>Actual End</Th>
+                                  <Th>Duration</Th>
+                                  <Th>Delay</Th>
+                                </Tr>
+                              </Thead>
+                              <Tbody>
+                                {[
+                                  {
+                                    title: "FSD",
+                                    plannedStart: dateDetails?.plannedFSDStartDate,
+                                    plannedEnd: dateDetails?.plannedFSDEndDate,
+                                    actualStart: null,
+                                    actualEnd: null,
+                                  },
+                                  {
+                                    title: "QA Testing",
+                                    plannedStart: dateDetails?.plannedQaTestingStartDate,
+                                    plannedEnd: dateDetails?.plannedQaTestingEndDate,
+                                    actualStart: dateDetails?.actualQaTestingStartDate,
+                                    actualEnd: dateDetails?.actualQaTestingEndDate,
+                                  },
+                                  {
+                                    title: "UAT",
+                                    plannedStart: dateDetails?.plannedUatStartDate,
+                                    plannedEnd: dateDetails?.plannedUatEndDate,
+                                    actualStart: null,
+                                    actualEnd: null,
+                                  },
+                                  {
+                                    title: "Go Live",
+                                    plannedStart: dateDetails?.plannedGoLiveDate,
+                                    plannedEnd: null,
+                                    actualStart: null,
+                                    actualEnd: dateDetails?.actualGoLiveDate,
+                                  },
+                                ].map((row) => {
+                                  const formatDate = (d) => d ? new Date(d).toLocaleDateString() : "-";
+                                  const duration = (s, e) => (s && e) ? `${(new Date(e) - new Date(s)) / (1000 * 3600 * 24)} day(s)` : "-";
+                                  const delay = (planned, actual) => (planned && actual)
+                                    ? `${(new Date(actual) - new Date(planned)) / (1000 * 3600 * 24)} day(s)`
+                                    : "-";
+
+                                  return (
+                                    <Tr key={row.title}>
+                                      <Td>{row.title}</Td>
+                                      <Td>{formatDate(row.plannedStart)}</Td>
+                                      <Td>{formatDate(row.plannedEnd)}</Td>
+                                      <Td>{formatDate(row.actualStart)}</Td>
+                                      <Td>{formatDate(row.actualEnd)}</Td>
+                                      <Td>{duration(row.plannedStart, row.plannedEnd)}</Td>
+                                      <Td>{delay(row.plannedEnd, row.actualEnd)}</Td>
+                                    </Tr>
+                                  );
+                                })}
+                              </Tbody>
+                            </Table>
+                          </TabPanel>
+                          <TabPanel>
+                            <Box maxH="500px" overflowY="auto" p={2}>
+                              <Text fontWeight="bold" fontSize="md" mb={3}>Subtasks</Text>
+
+                              <VStack spacing={4} align="stretch">
+                                {subTasks.map((task) => {
+                                  let typeIcon;
+                                  switch (task.issueType.toLowerCase()) {
+                                    case 'maintenance':
+                                      typeIcon = <MdAttachMoney color="green" size={20} />;
+                                      break;
+                                    case 'qa':
+                                      typeIcon = <PiTestTubeFill color="purple" size={20} />;
+                                      break;
+                                    default:
+                                      typeIcon = <MdAssignment color="blue" size={20} />;
+                                  }
+
+                                  const priorityIcon = <FaArrowUp color="red" />;
+                                  const statusColor =
+                                    task.status.toLowerCase().includes("close") ? "green.100"
+                                      : task.status.toLowerCase().includes("development") ? "blue.100"
+                                        : "gray.100";
+
+                                  return (
+                                    <Flex
+                                      key={task.id}
+                                      p={4}
+                                      bg="white"
+                                      borderRadius="md"
+                                      boxShadow="sm"
+                                      justify="space-between"
+                                      align="center"
+                                      _hover={{ boxShadow: "md", cursor: "pointer" }}
+                                      onClick={() => window.location.href = `/admin/view/${task.issueId}`}
+                                    >
+                                      {/* Left section with icon, ID, Summary */}
+                                      <HStack spacing={4}>
+                                        <Box>{typeIcon}</Box>
+                                        <Box>
+                                          <Text fontWeight="bold" color="blue.600">
+                                            {task.issueId}
+                                          </Text>
+                                          <Text fontSize="sm" color="gray.600" noOfLines={1}>
+                                            {task.summary}
+                                          </Text>
+                                        </Box>
+                                      </HStack>
+
+                                      {/* Right section with Priority, Assignee (Avatar only), Status */}
+                                      <HStack spacing={4}>
+                                        <Box>{priorityIcon}</Box>
+                                        <Tooltip label={task.assignee} fontSize="sm" hasArrow>
+                                          <Avatar size="sm" icon={<FaUserCircle />} name={task.assignee} />
+                                        </Tooltip>
+                                        <Tag bg={statusColor} color="gray.800" fontWeight="bold" px={3} py={1}>
+                                          {task.status}
+                                        </Tag>
+                                      </HStack>
+                                    </Flex>
+                                  );
+                                })}
+                              </VStack>
+                            </Box>
+                          </TabPanel>
                         </TabPanels>
                       </Tabs>
                     </Box>
@@ -1493,7 +1594,7 @@ const fetchDateDetails = async () => {
           <div style={{ width: "1px", backgroundColor: "#c9c9c9" }}></div>
 
           {/* Right Section (30%) */}
-          <div style={{ flex: 4 }}>
+          <div style={{ flex: 3 }}>
             <div style={{ marginTop: "10px", marginLeft: "10px" }}>
               {/* Popover */}
               <Popover isOpen={isOpen} onClose={() => setIsOpen(false)}>
@@ -1571,91 +1672,91 @@ const fetchDateDetails = async () => {
             </div>
 
             <div style={{ marginTop: "10px", marginLeft: "10px" }}>
-            <div>
-  <Accordion allowMultiple>
-    {items.map((item, index) => (
-      <AccordionItem key={index}>
-        <h2>
-          <AccordionButton>
-            <Box flex="1" textAlign="left">{item.title}</Box>
-            <AccordionIcon />
-          </AccordionButton>
-        </h2>
+              <div>
+                <Accordion allowMultiple>
+                  {items.map((item, index) => (
+                    <AccordionItem key={index}>
+                      <h2>
+                        <AccordionButton>
+                          <Box flex="1" textAlign="left">{item.title}</Box>
+                          <AccordionIcon />
+                        </AccordionButton>
+                      </h2>
 
-        <AccordionPanel>
-          {index === 0 ? (
-            <VStack spacing={4} align="stretch">
-              {/* Assignee */}
-              <HStack justify="space-between">
-                <Text>Assignee</Text>
-                <Select
-                  value={accordionFields.assignee}
-                  onChange={(e) => handleAccordionChange(e, "assignee")}
-                  width="200px"
-                >
-                  <option value="Saurav Kumar">Saurav Kumar</option>
-                  <option value="Om Thange">Om Thange</option>
-                  <option value="Prathamesh Kokane">Prathamesh Kokane</option>
-                </Select>
-              </HStack>
+                      <AccordionPanel>
+                        {index === 0 ? (
+                          <VStack spacing={4} align="stretch">
+                            {/* Assignee */}
+                            <HStack justify="space-between">
+                              <Text>Assignee</Text>
+                              <Select
+                                value={accordionFields.assignee}
+                                onChange={(e) => handleAccordionChange(e, "assignee")}
+                                width="200px"
+                              >
+                                <option value="Saurav Kumar">Saurav Kumar</option>
+                                <option value="Om Thange">Om Thange</option>
+                                <option value="Prathamesh Kokane">Prathamesh Kokane</option>
+                              </Select>
+                            </HStack>
 
-              {/* Reporter - Editable */}
-              <HStack justify="space-between">
-                <Text>Reporter</Text>
-                <Editable
-                  value={accordionFields.reporter}
-                  onChange={(val) => handleAccordionEditableChange("reporter", val)}
-                >
-                  <EditablePreview />
-                  <EditableInput width="200px" />
-                </Editable>
-              </HStack>
+                            {/* Reporter - Editable */}
+                            <HStack justify="space-between">
+                              <Text>Reporter</Text>
+                              <Editable
+                                value={accordionFields.reporter}
+                                onChange={(val) => handleAccordionEditableChange("reporter", val)}
+                              >
+                                <EditablePreview />
+                                <EditableInput width="200px" />
+                              </Editable>
+                            </HStack>
 
-              {/* Priority */}
-              <HStack justify="space-between">
-                <Text>Priority</Text>
-                <Select
-                  value={accordionFields.priority}
-                  onChange={(e) => handleAccordionChange(e, "priority")}
-                  width="200px"
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </Select>
-              </HStack>
+                            {/* Priority */}
+                            <HStack justify="space-between">
+                              <Text>Priority</Text>
+                              <Select
+                                value={accordionFields.priority}
+                                onChange={(e) => handleAccordionChange(e, "priority")}
+                                width="200px"
+                              >
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                              </Select>
+                            </HStack>
 
-              {/* CR Approved Date (Optional - view only for now) */}
-              <HStack justify="space-between">
-                <Text>CR Approved Date</Text>
-                <Text>{accordionFields.crApprovedDate || "NA"}</Text>
-              </HStack>
+                            {/* CR Approved Date (Optional - view only for now) */}
+                            <HStack justify="space-between">
+                              <Text>CR Approved Date</Text>
+                              <Text>{accordionFields.crApprovedDate || "NA"}</Text>
+                            </HStack>
 
-              {/* Primary BA - Editable */}
-              <HStack justify="space-between">
-                <Text>Primary BA</Text>
-                <Editable
-                  value={accordionFields.primaryBA}
-                  onChange={(val) => handleAccordionEditableChange("primaryBA", val)}
-                >
-                  <EditablePreview />
-                  <EditableInput width="200px" />
-                </Editable>
-              </HStack>
-            </VStack>
-          ) : (
-            <Text>{item.text}</Text>
-          )}
-        </AccordionPanel>
-      </AccordionItem>
-    ))}
-  </Accordion>
-</div>
+                            {/* Primary BA - Editable */}
+                            <HStack justify="space-between">
+                              <Text>Primary BA</Text>
+                              <Editable
+                                value={accordionFields.primaryBA}
+                                onChange={(val) => handleAccordionEditableChange("primaryBA", val)}
+                              >
+                                <EditablePreview />
+                                <EditableInput width="200px" />
+                              </Editable>
+                            </HStack>
+                          </VStack>
+                        ) : (
+                          <Text>{item.text}</Text>
+                        )}
+                      </AccordionPanel>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
 
             </div>
           </div>
         </div>
-      </Card>
+      </Card >
       <Modal
         isOpen={isTransitionPopupOpen}
         onClose={() => setIsTransitionPopupOpen(false)}
@@ -1781,10 +1882,6 @@ const fetchDateDetails = async () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-
-
-
-    </Box>
-
+    </Box >
   );
 }
