@@ -138,6 +138,23 @@ export default function Overview() {
     setRows(updatedRows);
   };
 
+  const handleDeleteComment = async (issueId, commentId, index) => {
+    try {
+      const response = await axios.delete(`http://localhost:8080/api/comments/deleteCommentByIssueIdAndComment/${issueId}/${commentId}`);
+      if (response.status === 200) {
+        // Remove comment from state to update UI
+        const updatedComments = comments.filter((_, i) => i !== index);
+        setComments(updatedComments);
+        toast.success("Comment deleted successfully");
+      } else {
+        toast.error("Failed to delete comment");
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast.error("Error deleting comment");
+    }
+  };
+
   const handleSelectChange = (event, index) => {
     const updatedRows = [...rows];
     updatedRows[index].selectValue = event.target.value;
@@ -168,6 +185,11 @@ export default function Overview() {
   };
   const handleSaveEdit = async () => {
     if (editIndex === null) return;
+
+    if (!editValue.trim()) {
+      toast.error("Edit cannot be empty.");
+      return;
+    }
 
     const updatedComment = {
       issueId: id,
@@ -252,9 +274,11 @@ export default function Overview() {
     try {
       const response = await axios.get(`http://localhost:8080/api/comments/getCommentByIssueId/${id}`);
       const formatted = response.data.map((c) => ({
+        commentId: c.commentId,
+        issueId: c.issueId,
         author: c.commentBy,
         timestamp: new Date(c.timestamp).toLocaleString(),
-        text: c.comment,
+        text: c.comment
       }));
       setComments(formatted);
     } catch (error) {
@@ -317,7 +341,8 @@ export default function Overview() {
     "blockquote", "list", "bullet", "indent", "link", "image"
   ];
 
-  const handleAddComment = async () => {
+  const handleAddComment = async (event) => {
+    event.preventDefault();
     const editor = quillRef.current?.getEditor();
     const commentText = editor?.getText()?.trim();
     const commentHTML = editor?.root?.innerHTML?.trim();
@@ -415,10 +440,6 @@ export default function Overview() {
     if (selectedFiles.length === 0) return;
 
     for (const file of selectedFiles) {
-      // if (file.size === 0) {
-      //   toast.error(`File: ${file.name} is empty and will not be uploaded.`);
-      //   continue;
-      // }
       const reader = new FileReader();
 
       reader.onload = async (e) => {
@@ -427,7 +448,7 @@ export default function Overview() {
         const payload = {
           issueId: id, // Replace with dynamic issueId if available
           filename: file.name,
-          uploadedBy: username,
+          uploadedBy: username, // Replace with dynamic username if needed
           uploadedTimestamp: getISTDateTime(),
           filedata: base64Data,
         };
@@ -777,7 +798,7 @@ export default function Overview() {
                     + Add
                   </MenuButton>
                   <Portal>
-                    <MenuList>
+                    <MenuList fontSize={"14px"}>
                       {/* <MenuItem>Attachment</MenuItem> */}
                       <MenuItem
                         onClick={() => {
@@ -818,9 +839,10 @@ export default function Overview() {
                 {issueData.issueType === "Bug" ? (
                   ["Description", "Steps to Reproduce", "Expected Output", "Actual Output"].map((label, index) => (
                     <div key={index} style={{ margin: "5px" }}>
-                      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
+                      <label style={{ fontSize: "16px", fontWeight: 500 }}>{label}</label>
                       <div>
                         <Editable
+                          fontSize="14px"
                           textAlign="start"
                           value={editableFields[label] || ""}
                           onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
@@ -830,7 +852,7 @@ export default function Overview() {
                               [label]: val,
                             }))
                           }
-                        >
+>
                           <EditablePreview />
                           <EditableInput />
                         </Editable>
@@ -1202,7 +1224,6 @@ export default function Overview() {
                               ))}
                             </VStack>
                           </TabPanel>
-
                           <TabPanel p={0}>
                             <Box maxH="400px" overflowY="auto" border="1px solid #E2E8F0" borderRadius="md" p={3}>
                               <Text fontWeight="bold" fontSize="md" mb={2}>Linked Work Items</Text>

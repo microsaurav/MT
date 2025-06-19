@@ -67,7 +67,6 @@ export default function AdminNavbar(props) {
 			mx='auto'
 
 			mt={secondaryMargin}
-			pb='8px'
 			right={{ base: '12px', md: '30px', lg: '30px', xl: '30px' }}
 			px={{
 				sm: paddingX,
