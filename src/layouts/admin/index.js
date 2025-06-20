@@ -98,28 +98,19 @@ export default function Dashboard(props) {
           routes={routes}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
-          display="none"
           pt="80px"
+          zIndex="sticky"
           {...rest}
         />
-          <Box
-            float="right"
-            minHeight="100vh"
-            height="100%"
-            overflowY="hidden"
-            position="relative"
-            maxHeight="100%"
-            transition="all 0.2s linear"
-            w={{ base: '100%', xl: collapsed ? 'calc( 100% - 80px )' : 'calc( 100% - 300px )' }}
-            maxWidth={{ base: '100%', xl: collapsed ? 'calc(100% - 80px)' : 'calc(100% - 290px)' }}
-            pt={{ base: '40px', md: '50px', xl: '50px' }} // padding top for navbar 
-            overflowX="hidden"
-        // ml={{
-        //   base: 0,
-        //   xl: collapsed ? '80px' : '300px', // updated line
-        // }}
+        <Box
+          display="flex"
+          flexDirection="column"
+          maxHeight="100vh"
+          transition="all 0.2s linear"
+          ml={{ base: 0, xl: collapsed ? '80px' : '300px' }}
+          overflowY="hidden"
         >
-          <Box>
+          <Box position="sticky" top="0" zIndex="sticky" maxW={{ base: 0, xl: collapsed ? '80px' : '400px' }}>
             <Portal>
               <Navbar
                 collapsed={collapsed}
@@ -133,24 +124,25 @@ export default function Dashboard(props) {
               />
             </Portal>
           </Box>
-          {getRoute() && (
-            <Box
-              mx="auto"
-              p={{ base: '20px', md: '30px' }}
-              pe="20px"
-              minH="100vh"
-              pt="40px"
-              overflowY="auto"
-            >
-              <Routes>
-                {getRoutes(routes)}
-                <Route
-                  path="/"
-                  element={<Navigate to="/admin/default" replace />}
-                />
-              </Routes>
-            </Box>
-          )}
+          <Box flex="1" height="100%">
+            {getRoute() && (
+              <Box
+                mx="auto"
+                p={{ base: '20px', md: '30px' }}
+                pe="20px"
+                height="100%"
+                pt="40px"
+              >
+                <Routes>
+                  {getRoutes(routes)}
+                  <Route
+                    path="/"
+                    element={<Navigate to="/admin/default" replace />}
+                  />
+                </Routes>
+              </Box>
+            )}
+          </Box>
           <Box>{/* <Footer /> */}</Box>
         </Box>
       </SidebarContext.Provider>

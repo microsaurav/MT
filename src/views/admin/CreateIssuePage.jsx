@@ -122,18 +122,18 @@ export default function CreateIssueModal() {
   };
   console.log("IssueData", issueData.project)
   return (
-    <Box pt={{ base: '130px', md: '80px', xl: '80px' }}>
-
+    <Box pt={{ base: '130px', md: '80px', xl: '80px' }} position="relative">
       <Card
         flexDirection="column"
         w="100%"
         px="60px"
-        py="40px"
+        py="20px"
         mb="20px"
-        overflow="auto"
         borderRadius="16px"
         // boxShadow="0 8px 24px rgba(201,20,41,0.3)"
         backgroundColor="white"
+        maxHeight="600px"
+        overflowY="auto"
       >
         <Box>
           <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="6px">
@@ -199,7 +199,7 @@ export default function CreateIssueModal() {
               || issueData.issueType === 'Epic'
             ) && (
               <>
-                <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+                <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="12px">
                   {/* Issue Type */}
                   {/* <FormControl isRequired>
                     <FormLabel htmlFor="issueType" color="gray.400">
@@ -224,7 +224,7 @@ export default function CreateIssueModal() {
                   </FormControl> */}
                 </SimpleGrid>
 
-                <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+                <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="12px">
                   <FormControl isRequired>
                     <FormLabel htmlFor="severity" color="gray.400">
                       Business owner
@@ -277,9 +277,9 @@ export default function CreateIssueModal() {
                     </Select>
                   </FormControl>
                 </SimpleGrid>
-                <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+                <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="12px">
                   {/* Issue Type */}
-                  <FormControl isRequired>
+                  <FormControl isRequired paddingTop="5px">
                     <FormLabel htmlFor="issueType" color="gray.400">
                       Summary
                     </FormLabel>
@@ -301,8 +301,24 @@ export default function CreateIssueModal() {
                       minHeight="20px"
                     />
                   </FormControl>
+                  <FormControl marginTop="5px">
+                    <FormLabel htmlFor="assignee" color="gray.400">
+                      Assignee
+                    </FormLabel>
+                    <Input
+                      id="assignee"
+                      value={issueData.assignee}
+                      onChange={(e) =>
+                        setIssueData({ ...issueData, assignee: e.target.value })
+                      }
+                      borderColor={borderColor}
+                      _hover={{ borderColor: 'brandScheme.400' }}
+                      _focus={{ borderColor: 'brandScheme.400' }}
+                      backgroundColor={bgColor}
+                    />
+                  </FormControl>
                 </SimpleGrid>
-                <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+                <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="12px">
                   <FormControl isRequired>
                     <FormLabel htmlFor="issueDescription" color="gray.400">
                       Description
@@ -325,32 +341,59 @@ export default function CreateIssueModal() {
                       minHeight="150px"
                     />
                   </FormControl>
-                  <FormControl>
-                    <FormLabel htmlFor="tags" color="gray.400">
-                      Business Need Benefits details calculation (Tangible and
-                      intangible benefits)
-                    </FormLabel>
-                    <Textarea
-                      id="businessNeedBenefitsDetails"
-                      value={issueData.businessNeedBenefitsDetails}
-                      onChange={(e) =>
-                        setIssueData({
-                          ...issueData,
-                          businessNeedBenefitsDetails: e.target.value,
-                        })
-                      }
-                      borderColor={borderColor}
-                      _hover={{ borderColor: 'brandScheme.400' }}
-                      _focus={{ borderColor: 'brandScheme.400' }}
-                      backgroundColor={bgColor}
-                      resize="none"
-                      minHeight="90px"
-                    />
-                  </FormControl>
+                  <SimpleGrid rows={{sm: 1, md: 2}} spacing="10px">
+                    <FormControl>
+                      <FormLabel htmlFor="tags" color="gray.400" marginTop="5px">
+                        Business Need Benefits details calculation (Tangible and
+                        intangible benefits)
+                      </FormLabel>
+                      <Textarea
+                        id="businessNeedBenefitsDetails"
+                        value={issueData.businessNeedBenefitsDetails}
+                        onChange={(e) =>
+                          setIssueData({
+                            ...issueData,
+                            businessNeedBenefitsDetails: e.target.value,
+                          })
+                        }
+                        borderColor={borderColor}
+                        _hover={{ borderColor: 'brandScheme.400' }}
+                        _focus={{ borderColor: 'brandScheme.400' }}
+                        backgroundColor={bgColor}
+                        resize="none"
+                        minHeight="50px"
+                      />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel htmlFor="workstream" color="gray.400">
+                        WorkStream and Business Function
+                      </FormLabel>
+                      <Select
+                        id="workstreamStreamAndBusinessFunction"
+                        value={issueData.workstreamStreamAndBusinessFunction}
+                        onChange={(e) =>
+                          setIssueData({ ...issueData, workstreamStreamAndBusinessFunction: e.target.value })
+                        }
+                        borderColor={borderColor}
+                        _hover={{ borderColor: 'brandScheme.400' }}
+                        _focus={{ borderColor: 'brandScheme.400' }}
+                        backgroundColor={bgColor}
+                      >
+                        <option value="" disabled>
+                          Select an option
+                        </option>
+                        {workstreamStreamAndBusinessFunctionOptions.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </SimpleGrid>
                 </SimpleGrid>
 
-                <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
-                  <FormControl>
+                {/* <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="12px"> */}
+                  {/* <FormControl>
                     <FormLabel htmlFor="assignee" color="gray.400">
                       Assignee
                     </FormLabel>
@@ -365,8 +408,8 @@ export default function CreateIssueModal() {
                       _focus={{ borderColor: 'brandScheme.400' }}
                       backgroundColor={bgColor}
                     />
-                  </FormControl>
-                  <FormControl>
+                  </FormControl> */}
+                  {/* <FormControl>
                     <FormLabel htmlFor="workstream" color="gray.400">
                       WorkStream and Business Function
                     </FormLabel>
@@ -390,9 +433,9 @@ export default function CreateIssueModal() {
                         </option>
                       ))}
                     </Select>
-                  </FormControl>
-                </SimpleGrid>
-                <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+                  </FormControl> */}
+                {/* </SimpleGrid> */}
+                <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="12px">
                   {/* Assignee */}
                   <FormControl>
                     <FormLabel htmlFor="module" color="gray.400">
@@ -600,7 +643,7 @@ export default function CreateIssueModal() {
             )}
           {issueData.projectName === 'ABHI Change Request Management' && issueData.issueType === 'Bug' && (
             <>
-              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="12px">
                 {/* Issue Type */}
                 <FormControl isRequired>
                   <FormLabel htmlFor="issueType" color="gray.400">
@@ -616,6 +659,7 @@ export default function CreateIssueModal() {
                     _hover={{ borderColor: 'brandScheme.400' }}
                     _focus={{ borderColor: 'brandScheme.400' }}
                     backgroundColor={bgColor}
+                    
                   >
                     <option value="" disabled>
                       Select an option
@@ -654,7 +698,7 @@ export default function CreateIssueModal() {
                   </Select>
                 </FormControl>
               </SimpleGrid>
-              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="12px">
                 {/* Issue Type */}
                 <FormControl isRequired>
                   <FormLabel htmlFor="issueType" color="gray.400">
@@ -707,7 +751,7 @@ export default function CreateIssueModal() {
                   />
                 </FormControl>
               </SimpleGrid>
-              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="12px">
                 <FormControl isRequired>
                   <FormLabel htmlFor="defectDesciption" color="gray.400">
                     Defect Description
@@ -817,7 +861,7 @@ export default function CreateIssueModal() {
 </FormControl>
 
               </SimpleGrid> */}
-              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="12px">
                 <FormControl isRequired>
                   <FormLabel htmlFor="priority" color="gray.400">
                     Priority
@@ -869,7 +913,7 @@ export default function CreateIssueModal() {
                   </Select>
                 </FormControl>
               </SimpleGrid>
-              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="12px">
                 <FormControl isRequired>
                   <FormLabel htmlFor="environment" color="gray.400">
                     Environment
@@ -916,7 +960,7 @@ export default function CreateIssueModal() {
                     </Select>
                   </FormControl> */}
               </SimpleGrid>
-              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="12px">
                 {/* Assignee */}
                 <FormControl isRequired>
                   <FormLabel htmlFor="impactedSystems" color="gray.400">
@@ -1092,7 +1136,7 @@ export default function CreateIssueModal() {
                 </FormControl>
 
               </SimpleGrid>
-              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+              <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="12px">
                 {/* Assignee */}
                 <FormControl>
                   <FormLabel htmlFor="assignee" color="gray.400">
@@ -1117,7 +1161,7 @@ export default function CreateIssueModal() {
                   </Select>
                 </FormControl>
               </SimpleGrid>
-              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="12px">
                 {/* Assignee */}
                 <FormControl isRequired>
                   <FormLabel htmlFor="actualOutput" color="gray.400">
@@ -1141,7 +1185,7 @@ export default function CreateIssueModal() {
                   />
                 </FormControl>
               </SimpleGrid>
-              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="12px">
                 {/* Assignee */}
                 <FormControl isRequired>
                   <FormLabel htmlFor="expectedOutput" color="gray.400">
@@ -1165,7 +1209,7 @@ export default function CreateIssueModal() {
                   />
                 </FormControl>
               </SimpleGrid>
-              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+              <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="12px">
                 {/* Assignee */}
                 <FormControl isRequired>
                   <FormLabel htmlFor="noOfTestCaseImpacted" color="gray.400">

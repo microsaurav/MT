@@ -57,14 +57,15 @@ function Sidebar(props) {
   return (
     // Update: Setting size of sidebar
     <Box
-      display={{ sm: "none", xl: "block" }} w="100%"
+      display={{ sm: "none", xl: "block" }}
+      w={collapsed ? "80px" : "300px"}
       position="fixed"
       minH="100%"
       top="60px"
       height="calc(100vh - 60px)"
       onMouseEnter={handleSidebarMouseEnter} // Update: show sidebar on mouse enter
       onMouseLeave={handleSidebarMouseLeave} // Update: hide sidebar on mouse leave
-      z-index="999"
+      zIndex="999"
     >
       <Box
         bg={sidebarBg}
