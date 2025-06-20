@@ -91,6 +91,7 @@ import { ArrowRightIcon } from "lucide-react"; // optional icon
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import the default styles
+import BeatLoader from 'components/beatloader/BeatLoader';
 
 export default function Overview() {
 
@@ -790,7 +791,7 @@ export default function Overview() {
           <div style={{ flex: 6 }}>
             <div>
               <div style={{ fontSize: "22px", fontWeight: 500, marginTop: "10px" }}>
-                {issueData ? issueData.summary : "Loading summary..."}
+                {issueData ? issueData.summary : <BeatLoader />}
               </div>
               <div>
                 <Menu>
@@ -852,7 +853,7 @@ export default function Overview() {
                               [label]: val,
                             }))
                           }
->
+                        >
                           <EditablePreview />
                           <EditableInput />
                         </Editable>
@@ -1030,7 +1031,7 @@ export default function Overview() {
                   </ModalContent>
                 </Modal>
                 <div style={{ margin: "5px" }}>
-                  <label style={{ fontSize: "18px", fontWeight: 500 }}>Activity</label>
+                  <label style={{ fontSize: "16px", fontWeight: 500 }}>Activity</label>
 
                   <Tabs
                     index={tabIndex}

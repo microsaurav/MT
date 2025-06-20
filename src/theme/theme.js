@@ -10,25 +10,27 @@ import { switchStyles } from "./components/switch";
 import { linkStyles } from "./components/link";
 import { breakpoints } from "./foundations/breakpoints";
 import { globalStyles } from "./styles";
+
 const colors = {
-  primary: {
-    50: "rgb(255,244,218)",
-    100: "rgb(255,255,255)",
-    500: "rgb(201,20,41)",
-    600: "rgb(141,18,24)",
+  brand: {
+    lightCream: 'rgb(255,244,218)', // light cream
+    white: 'rgb(255,255,255)', // white
+    primaryRed: 'rgb(201,20,41)',   // primary red
+    darkRed: 'rgb(141,18,24)',   // dark red
   },
   secondary: {
-    50: "rgb(220,221,222)",
-    100: "rgb(119,120,123)",
-    200: "rgb(65,64,66)",
-    300: "rgb(0, 0, 0)",
-    400: "rgb(124,34,122)",
-    500: "rgb(115,185,100)",
-    600: "rgb(189,215,83)",
-    700: "rgb(247,116,00)",
-    800: "rgb(255,215,80)",
+    gold: 'rgb(255,215,80)',
+    orange: 'rgb(247,116,00)',
+    greenLight: 'rgb(189,215,83)',
+    green: 'rgb(115,185,100)',
+    purple: 'rgb(124,34,122)',
+    black: 'rgb(0,0,0)',
+    charcoal: 'rgb(65,64,66)',
+    gray: 'rgb(119,120,123)',
+    lightGray: 'rgb(220,221,222)',
   },
 };
+
 
 export default extendTheme(
   { breakpoints, colors }, // Breakpoints and colors

@@ -13,8 +13,6 @@ import {
   Icon,
   useDisclosure,
 
-  useBreakpointValue,
-
 } from '@chakra-ui/react';
 import Multiselect from 'multiselect-react-dropdown';
 import { ToastContainer, toast } from "react-toastify";
@@ -122,22 +120,23 @@ export default function CreateIssueModal() {
       tags: prevData.tags.filter((tag) => tag !== tagToRemove),
     }));
   };
-    console.log("IssueData",  issueData.project)
-
-  const cardPadding = useBreakpointValue({base: 3, md: 8})
-
+  console.log("IssueData", issueData.project)
   return (
     <Box pt={{ base: '130px', md: '80px', xl: '80px' }}>
 
       <Card
         flexDirection="column"
         w="100%"
-        px="25px"
+        px="60px"
+        py="40px"
         mb="20px"
-        overflow="hidden"
+        overflow="auto"
+        borderRadius="16px"
+        // boxShadow="0 8px 24px rgba(201,20,41,0.3)"
+        backgroundColor="white"
       >
         <Box>
-          <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
+          <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="6px">
             <FormControl isRequired>
               <FormLabel htmlFor="project" color="gray.400">
                 Project
@@ -148,11 +147,15 @@ export default function CreateIssueModal() {
                 onChange={(e) =>
                   setIssueData({ ...issueData, projectName: e.target.value })
                 }
+                // borderColor="rgb(220,221,222)"
+                // color="rgb(201,20,41)"
+                // _hover={{ borderColor: 'rgb(247,116,00)' }}
+                // _focus={{ borderColor: 'rgb(247,116,00)', boxShadow: '0 0 0 1px rgb(247,116,00)' }}
+                // backgroundColor="rgb(255,244,218)"
                 borderColor={borderColor}
-                textColor={textColor}
+                backgroundColor={bgColor}
                 _hover={{ borderColor: 'brandScheme.400' }}
                 _focus={{ borderColor: 'brandScheme.400' }}
-                backgroundColor={bgColor}
               >
                 <option value="" disabled>
                   Select an Option
@@ -160,35 +163,10 @@ export default function CreateIssueModal() {
                 <option value="ABHI Change Request Management">
                   ABHI Change Request Management
                 </option>
-                {/* <option value="Prodcution">ABHI Products Defect Management</option> */}
               </Select>
             </FormControl>
 
             <FormControl isRequired>
-              {/* <FormLabel htmlFor="severity" color="gray.400">
-          Issue Type
-        </FormLabel>
-        <Select
-          id="issueType"
-          value={issueData.issueType}
-          onChange={(e) =>
-            setIssueData({ ...issueData, issueType: e.target.value })
-          }
-          borderColor={borderColor}
-          _hover={{ borderColor: 'brandScheme.400' }}
-          _focus={{ borderColor: 'brandScheme.400' }}
-          backgroundColor={bgColor}
-        >
-          <option value="" disabled>
-            Select an option
-          </option>
-          <option value="CR">Change Request</option>
-          <option value="Project">Project</option>
-          <option value="BAU">BAU Projects</option>
-          <option style={{color: "#D3D3D3"}} disabled value="Service Request">Service Request</option>
-          <option style={{color: "#D3D3D3"}}disabled value="Bug">Bug</option>
-        </Select> */}
-
               <FormLabel htmlFor="issueType" color="gray.400">
                 Issue Type
               </FormLabel>
@@ -199,9 +177,9 @@ export default function CreateIssueModal() {
                   setIssueData({ ...issueData, issueType: e.target.value })
                 }
                 borderColor={borderColor}
+                backgroundColor={bgColor}
                 _hover={{ borderColor: 'brandScheme.400' }}
                 _focus={{ borderColor: 'brandScheme.400' }}
-                backgroundColor={bgColor}
               >
                 <option value="" disabled>
                   Select an option
@@ -211,16 +189,7 @@ export default function CreateIssueModal() {
                     {type}
                   </option>
                 ))}
-
-                {/* Optional: greyed out disabled static options */}
-                {/* <option style={{ color: "#D3D3D3" }} disabled value="Service Request">
-    Service Request
-  </option>
-  <option style={{ color: "#D3D3D3" }} disabled value="Bug">
-    Bug
-  </option> */}
               </Select>
-
             </FormControl>
           </SimpleGrid>
           {issueData.projectName === 'ABHI Change Request Management' &&
@@ -282,6 +251,31 @@ export default function CreateIssueModal() {
                       ))}
                     </Select>
                   </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel htmlFor="priority" color="gray.400">
+                      Priority
+                    </FormLabel>
+                    <Select
+                      id="priority"
+                      value={issueData.priority}
+                      onChange={(e) =>
+                        setIssueData({ ...issueData, priority: e.target.value })
+                      }
+                      borderColor={borderColor}
+                      _hover={{ borderColor: 'brandScheme.400' }}
+                      _focus={{ borderColor: 'brandScheme.400' }}
+                      backgroundColor={bgColor}
+                    >
+                      <option value="" disabled>
+                        Select an option
+                      </option>
+                      {priorityOptions.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </SimpleGrid>
                 <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
                   {/* Issue Type */}
@@ -308,7 +302,7 @@ export default function CreateIssueModal() {
                     />
                   </FormControl>
                 </SimpleGrid>
-                <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
+                <SimpleGrid columns={{ sm: 1, md: 2 }} spacing="20px" mb="24px">
                   <FormControl isRequired>
                     <FormLabel htmlFor="issueDescription" color="gray.400">
                       Description
@@ -331,86 +325,27 @@ export default function CreateIssueModal() {
                       minHeight="150px"
                     />
                   </FormControl>
-                  {/* <SimpleGrid
-                    columns={{ sm: 1, md: 1 }}
-                    spacing="20px"
-                    mb="24px"
-                  >
-                    
-                    <FormControl isRequired>
-                      <FormLabel htmlFor="issueType" color="gray.400">
-                        In Scope
-                      </FormLabel>
-                      <Textarea
-                        id="inScope"
-                        value={issueData.inScope}
-                        onChange={(e) =>
-                          setIssueData({
-                            ...issueData,
-                            inScope: e.target.value,
-                          })
-                        }
-                        borderColor={borderColor}
-                        _hover={{ borderColor: 'brandScheme.400' }}
-                        _focus={{ borderColor: 'brandScheme.400' }}
-                        backgroundColor={bgColor}
-                        resize="none"
-                        minHeight="90px"
-                      />
-                    </FormControl>
-                  </SimpleGrid> */}
-                  {/* <SimpleGrid
-                    columns={{ sm: 1, md: 1 }}
-                    spacing="20px"
-                    mb="24px"
-                  >
-                    <FormControl isRequired>
-                      <FormLabel htmlFor="issueType" color="gray.400">
-                        Out Scope
-                      </FormLabel>
-                      <Textarea
-                        id="outScope"
-                        value={issueData.outScope}
-                        onChange={(e) =>
-                          setIssueData({
-                            ...issueData,
-                            outScope: e.target.value,
-                          })
-                        }
-                        borderColor={borderColor}
-                        _hover={{ borderColor: 'brandScheme.400' }}
-                        _focus={{ borderColor: 'brandScheme.400' }}
-                        backgroundColor={bgColor}
-                        resize="none"
-                        minHeight="90px"
-                      />
-                    </FormControl>
-                  </SimpleGrid> */}
-
-                  <FormControl isRequired>
-                    <FormLabel htmlFor="priority" color="gray.400">
-                      Priority
+                  <FormControl>
+                    <FormLabel htmlFor="tags" color="gray.400">
+                      Business Need Benefits details calculation (Tangible and
+                      intangible benefits)
                     </FormLabel>
-                    <Select
-                      id="priority"
-                      value={issueData.priority}
+                    <Textarea
+                      id="businessNeedBenefitsDetails"
+                      value={issueData.businessNeedBenefitsDetails}
                       onChange={(e) =>
-                        setIssueData({ ...issueData, priority: e.target.value })
+                        setIssueData({
+                          ...issueData,
+                          businessNeedBenefitsDetails: e.target.value,
+                        })
                       }
                       borderColor={borderColor}
                       _hover={{ borderColor: 'brandScheme.400' }}
                       _focus={{ borderColor: 'brandScheme.400' }}
                       backgroundColor={bgColor}
-                    >
-                      <option value="" disabled>
-                        Select an option
-                      </option>
-                      {priorityOptions.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </Select>
+                      resize="none"
+                      minHeight="90px"
+                    />
                   </FormControl>
                 </SimpleGrid>
 
@@ -535,9 +470,6 @@ export default function CreateIssueModal() {
                     />
 
                   </FormControl>
-
-                </SimpleGrid>
-                <SimpleGrid columns={{ sm: 1, md: 1 }} spacing="20px" mb="24px">
                   {/* Assignee */}
                   <FormControl>
                     <FormLabel htmlFor="businessNeed" color="gray.400">
@@ -641,7 +573,7 @@ export default function CreateIssueModal() {
                     />
                   </FormControl>
 
-                  <FormControl>
+                  {/* <FormControl>
                     <FormLabel htmlFor="tags" color="gray.400">
                       Business Need Benefits details calculation (Tangible and
                       intangible benefits)
@@ -662,7 +594,7 @@ export default function CreateIssueModal() {
                       resize="none"
                       minHeight="90px"
                     />
-                  </FormControl>
+                  </FormControl> */}
                 </SimpleGrid>
               </>
             )}
@@ -1261,12 +1193,18 @@ export default function CreateIssueModal() {
           )}
           <Flex justifyContent="end" mt="20px">
             <Button
-              colorScheme="brandScheme"
-              size={['sm', 'md', 'lg']} // Responsive size change
+              size={['sm', 'md', 'lg']}
               onClick={handleFormSubmit}
               width={['80%', '60%', '40%', '20%']}
               leftIcon={<Icon as={MdCheckCircle} />}
-              _hover={{ backgroundColor: 'brandScheme.500' }}
+              bg="rgb(201,20,41)"
+              color="white"
+              fontWeight="bold"
+              borderRadius="12px"
+              boxShadow="0 4px 12px rgba(201,20,41,0.6)"
+              _hover={{ backgroundColor: 'rgb(141,18,24)', boxShadow: '0 6px 16px rgba(141,18,24,0.8)' }}
+              _active={{ backgroundColor: 'rgb(141,18,24)', boxShadow: '0 2px 8px rgba(141,18,24,0.8)' }}
+              transition="background-color 0.3s ease, box-shadow 0.3s ease"
             >
               Create Issue
             </Button>

@@ -1,6 +1,6 @@
 import './assets/css/App.css';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { ChakraProvider } from '@chakra-ui/react';
+import { ChakraProvider, } from '@chakra-ui/react';
 import initialTheme from './theme/theme'; // Your theme file
 import { useState } from 'react';
 import Navbar from 'components/Navbar ABHI/Navbar'; // Your Navbar component
@@ -16,26 +16,26 @@ function Main() {
 
   return (
     <ChakraProvider theme={currentTheme}>
-      <div style={{ boxSizing: 'border-box' }}>
+      <div>
         <Navbar />
         <ToastContainer
           position="bottom-left"
           autoClose={5000}
           hideProgressBar={false}
         />
-        <Routes>
-          <Route path="auth/*" element={<AuthLayout />} />
+          <Routes>
+            <Route path="auth/*" element={<AuthLayout />} />
 
-          <Route
-            path="admin/*"
-            element={<AdminLayout theme={currentTheme} setTheme={setCurrentTheme} />}
-          />
-          <Route
-            path="rtl/*"
-            element={<RTLLayout theme={currentTheme} setTheme={setCurrentTheme} />}
-          />
-          <Route path="/" element={<Navigate to="/admin/default" replace />} />
-        </Routes>
+            <Route
+              path="admin/*"
+              element={<AdminLayout theme={currentTheme} setTheme={setCurrentTheme} />}
+            />
+            <Route
+              path="rtl/*"
+              element={<RTLLayout theme={currentTheme} setTheme={setCurrentTheme} />}
+            />
+            <Route path="/" element={<Navigate to="/admin/default" replace />} />
+          </Routes>
       </div>
     </ChakraProvider>
   );

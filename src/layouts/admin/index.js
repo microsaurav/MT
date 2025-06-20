@@ -14,7 +14,6 @@ export default function Dashboard(props) {
   const location = useLocation();
   const { onOpen } = useDisclosure();
   const [fixed] = useState(false);
-  const [toggleSidebar, setToggleSidebar] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
 
   const getRoute = () => location.pathname !== '/admin/full-screen-maps';
@@ -87,11 +86,11 @@ export default function Dashboard(props) {
     });
 
   return (
-    <Box overflow="hidden" position="relative">
+    <Box position="relative">
       <SidebarContext.Provider
         value={{
-          toggleSidebar,
-          setToggleSidebar,
+          collapsed,
+          setCollapsed,
         }}
       >
         {/* Update: Passing `collapsed` and `setCollapsed` state to Sidebar */}
@@ -103,29 +102,25 @@ export default function Dashboard(props) {
           pt="80px"
           {...rest}
         />
-        <Box
-          float="right"
-          minHeight="100vh"
-          height="100%"
-          overflowY="hidden"
-          position="relative"
-          maxHeight="100%"
-          transition=".2s linear"
-          transitionDelay='0s, 0s, 0s, 0s'
-          transitionDuration=".2s, .2s, .35s"
-          transitionProperty="top, bottom, width, margin"
-          transitionTimingFunction="linear, linear, ease"
-          w={{ base: '100%', xl: collapsed ? 'calc( 100% - 80px )' : 'calc( 100% - 300px )' }}
-          maxWidth={{ base: '100%', xl: collapsed ? 'calc(100% - 80px)' : 'calc(100% - 290px)' }}
-          pt={{ base: '40px', md: '50px', xl: '50px' }} // padding top for navbar 
-
+          <Box
+            float="right"
+            minHeight="100vh"
+            height="100%"
+            overflowY="hidden"
+            position="relative"
+            maxHeight="100%"
+            transition="all 0.2s linear"
+            w={{ base: '100%', xl: collapsed ? 'calc( 100% - 80px )' : 'calc( 100% - 300px )' }}
+            maxWidth={{ base: '100%', xl: collapsed ? 'calc(100% - 80px)' : 'calc(100% - 290px)' }}
+            pt={{ base: '40px', md: '50px', xl: '50px' }} // padding top for navbar 
+            overflowX="hidden"
         // ml={{
         //   base: 0,
         //   xl: collapsed ? '80px' : '300px', // updated line
         // }}
         >
-          <Portal>
-            <Box>
+          <Box>
+            <Portal>
               <Navbar
                 collapsed={collapsed}
                 onOpen={onOpen}
@@ -136,15 +131,16 @@ export default function Dashboard(props) {
                 fixed={fixed}
                 {...rest}
               />
-            </Box>
-          </Portal>
+            </Portal>
+          </Box>
           {getRoute() && (
             <Box
               mx="auto"
               p={{ base: '20px', md: '30px' }}
               pe="20px"
               minH="100vh"
-              pt="100px"
+              pt="40px"
+              overflowY="auto"
             >
               <Routes>
                 {getRoutes(routes)}
