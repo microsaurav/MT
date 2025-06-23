@@ -57,7 +57,9 @@ import {
   Td,
   Flex,
   Link,
-  IconButton
+  IconButton,
+  List,
+  ListItem
 } from "@chakra-ui/react";
 
 import {
@@ -68,7 +70,7 @@ import {
   LuListChecks
 } from "react-icons/lu";
 
-import { FaBug, FaUserCircle,FaArrowUp } from "react-icons/fa"; // ✅ Added missing icons
+import { FaBug, FaUserCircle, FaArrowUp } from "react-icons/fa"; // ✅ Added missing icons
 
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom"; // ✅ Added `Link`, already had useNavigate/useParams
 import { MdAttachMoney, MdAssignment } from "react-icons/md";
@@ -81,7 +83,7 @@ import SubtaskPopup from '../SubtaskPopup';
 import axios from 'axios';
 import Loading from '../components/Loading';
 
-import { ChevronDownIcon,EditIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon, EditIcon } from "@chakra-ui/icons";
 import { ArrowRightIcon } from "lucide-react"; // optional icon
 
 import { ToastContainer, toast } from "react-toastify";
@@ -108,18 +110,21 @@ export default function Overview() {
   const [transitionFormData, setTransitionFormData] = useState({});
   const [linkedIssues, setLinkedIssues] = useState([]);
   const [editorValue, setEditorValue] = useState("");
-const [isEditing, setIsEditing] = useState(false);
-const [editIndex, setEditIndex] = useState(null);
-const [editValue, setEditValue] = useState("");
-const [subTasks, setSubTasks] = useState([]);
-const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editIndex, setEditIndex] = useState(null);
+  const [editValue, setEditValue] = useState("");
+  const [subTasks, setSubTasks] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [userSuggestions, setUserSuggestions] = useState([]);
+  
+  const navigate = useNavigate();
   const userData = JSON.parse(sessionStorage.getItem("userData"));
-  console.log("userData", userData);  
+  console.log("userData", userData);
   const username = userData.username
   const addRow = () => {
     setRows([...rows, { value: "please add details", selectValue: "Option1" }]);
   };
-  
+
 
   const addRowLinkIssue = () => {
     setRowsLinkIssue([...rowsLinkIssue, { value: "please add details", selectValue: "Option1" }]);
@@ -153,22 +158,22 @@ const navigate = useNavigate();
   };
   const handleSaveEdit = async () => {
     if (editIndex === null) return;
-  
+
     const updatedComment = {
       issueId: id,
       comment: editValue,
       timestamp: new Date().toISOString().slice(0, 19),
       commentBy: comments[editIndex].author,
     };
-  
+
     try {
       await axios.put("http://localhost:8080/api/comments/updateCommentById", updatedComment);
-  
+
       // Update comments list locally
       const newComments = [...comments];
       newComments[editIndex].text = editValue;
       setComments(newComments);
-  
+
       setIsEditing(false);
       setEditIndex(null);
       setEditValue("");
@@ -176,7 +181,7 @@ const navigate = useNavigate();
       console.error("Failed to update comment:", err);
     }
   };
-  
+
   const handleSelectChangeLinkIssue = (event, index) => {
     const updatedRows = [...rowsLinkIssue];
     updatedRows[index].selectValue = event.target.value;
@@ -235,84 +240,121 @@ const navigate = useNavigate();
       .replace(/\s(.)/g, (match, group1) => group1.toUpperCase())
       .replace(/^(.)/, (match, group1) => group1.toLowerCase());
   }
-const fetchComments = async () => {
-  setLoading(true)
-  try {
-    const response = await axios.get(`http://localhost:8080/api/comments/getCommentByIssueId/${id}`);
-    const formatted = response.data.map((c) => ({
-      author: c.commentBy,
-      timestamp: new Date(c.timestamp).toLocaleString(),
-      text: c.comment,
-    }));
-    setComments(formatted);
-  } catch (error) {
-    console.error("Error fetching comments:", error);
-  }
-  finally{
-    setLoading(false)
-  }
-};
-const fetchSubTasksAndLinkedIssues = async () => {
-  setLoading(true)
-  try {
-    const res = await fetch(`http://localhost:8080/api/GetIssuedetailsbyParentCr/${id}`);
-    const data = await res.json();
-
-    const subtasks = data.filter(item => item.issueType !== "Bug");
-    const linked = data.filter(item => item.issueType === "Bug");
-
-    setSubTasks(subtasks);
-    setLinkedIssues(linked);
-  } catch (error) {
-    console.error("Error fetching subtasks/linked issues:", error);
-  }
-  finally{
-    setLoading(false)
-  }
-};
-
-const fetchDateDetails = async () => {
-  setLoading(true)
-  try {
-    const response = await axios.get(`http://localhost:8080/api/GetCrDateDetailsByIssueId/${id}`); // Replace with your actual endpoint
-    if (response.status === 200) {
-      setDateDetails(response.data);
-    } else {
-      console.error("Failed to fetch date details");
+  const fetchComments = async () => {
+    setLoading(true)
+    try {
+      const response = await axios.get(`http://localhost:8080/api/comments/getCommentByIssueId/${id}`);
+      const formatted = response.data.map((c) => ({
+        author: c.commentBy,
+        timestamp: new Date(c.timestamp).toLocaleString(),
+        text: c.comment,
+      }));
+      setComments(formatted);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
     }
-  } catch (error) {
-    console.error("Error fetching date details:", error);
-  }finally{
-    setLoading(false)
-  }
-};
+    finally {
+      setLoading(false)
+    }
+  };
+  const fetchSubTasks = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`http://localhost:8080/api/subtasks/SubtaskbyParentCR/${id}`);
+      const data = await res.json();
 
+      const subtasks = data.filter(item => item.workType !== "Defect");
+      const linked = data.filter(item => item.workType === "Defect");
 
- const handleAddComment = async () => {
-  const editor = quillRef.current?.getEditor();
-  const commentText = editor?.getText()?.trim();
-  const commentHTML = editor?.root?.innerHTML?.trim();
+      setSubTasks(subtasks);
+      setLinkedIssues(linked);
+    } catch (error) {
+      console.error("Error fetching subtasks/linked issues:", error);
+    }
+    finally {
+      setLoading(false)
+    }
+  };
+  const fetchLinkedIssues = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`http://localhost:8080/api/bugs/BugbyParentCR/${id}`);
+      const data = await res.json();
 
-  if (!commentText) return;
+      const subtasks = data.filter(item => item.workType !== "Defect");
+      const linked = data.filter(item => item.workType === "Defect");
 
-  const payload = {
-    issueId:id,
-    comment: commentHTML,
-    timestamp: getISTDateTime(),
-    commentBy: username,
+      setSubTasks(subtasks);
+      setLinkedIssues(linked);
+    } catch (error) {
+      console.error("Error fetching subtasks/linked issues:", error);
+    }
+    finally {
+      setLoading(false)
+    }
   };
 
-  try {
-    setLoading(true);
-    await axios.post("http://localhost:8080/api/comments/postCommentByIssueId", payload);
-    editor.setText(""); // clear editor
-    fetchComments(); // refresh comment list
-  } catch (error) {
-    console.error("Error submitting comment:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchDateDetails = async () => {
+    setLoading(true)
+    try {
+      const response = await axios.get(`http://localhost:8080/api/GetCrDateDetailsByIssueId/${id}`); // Replace with your actual endpoint
+      if (response.status === 200) {
+        setDateDetails(response.data);
+      } else {
+        console.error("Failed to fetch date details");
+      }
+    } catch (error) {
+      console.error("Error fetching date details:", error);
+    } finally {
+      setLoading(false)
+    }
+  };
+  useEffect(() => {
+    axios.get('http://localhost:8080/api/User/GetUserDetails')
+      .then((res) => {
+        setAllUsers(res.data);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch users', err);
+      });
+  }, []);
+  useEffect(() => {
+    if (!transitionFormData.assignee?.trim()) {
+      setUserSuggestions([]);
+    } else {
+      const filtered = allUsers.filter(user =>
+        user.username.toLowerCase().includes(transitionFormData.assignee.toLowerCase())
+      );
+      setUserSuggestions(filtered);
+    }
+  }, [transitionFormData.assignee, allUsers]);
+    
+
+  const handleAddComment = async () => {
+    const editor = quillRef.current?.getEditor();
+    const commentText = editor?.getText()?.trim();
+    const commentHTML = editor?.root?.innerHTML?.trim();
+
+    if (!commentText) return;
+
+    const payload = {
+      issueId: id,
+      comment: commentHTML,
+      timestamp: getISTDateTime(),
+      commentBy: username,
+    };
+
+    try {
+      setLoading(true);
+      await axios.post("http://localhost:8080/api/comments/postCommentByIssueId", payload);
+      editor.setText(""); // clear editor
+      fetchComments(); // refresh comment list
+    } catch (error) {
+      console.error("Error submitting comment:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   const items = [
@@ -336,27 +378,27 @@ const fetchDateDetails = async () => {
   const handleFileChange = (e) => {
     setSelectedFiles(Array.from(e.target.files));
   };
- 
-function getISTDateTime() {
-  const now = new Date();
 
-  // Format to 'yyyy-MM-ddTHH:mm:ss' using local time (which is already IST)
-  const pad = (n) => n.toString().padStart(2, '0');
-  const formatted =
-    now.getFullYear() +
-    '-' +
-    pad(now.getMonth() + 1) +
-    '-' +
-    pad(now.getDate()) +
-    'T' +
-    pad(now.getHours()) +
-    ':' +
-    pad(now.getMinutes()) +
-    ':' +
-    pad(now.getSeconds());
+  function getISTDateTime() {
+    const now = new Date();
 
-  return formatted;
-}
+    // Format to 'yyyy-MM-ddTHH:mm:ss' using local time (which is already IST)
+    const pad = (n) => n.toString().padStart(2, '0');
+    const formatted =
+      now.getFullYear() +
+      '-' +
+      pad(now.getMonth() + 1) +
+      '-' +
+      pad(now.getDate()) +
+      'T' +
+      pad(now.getHours()) +
+      ':' +
+      pad(now.getMinutes()) +
+      ':' +
+      pad(now.getSeconds());
+
+    return formatted;
+  }
 
 
   const handleUpload = async () => {
@@ -423,22 +465,24 @@ function getISTDateTime() {
   const handleAccordionChange = (e, field) => {
     const value = e.target.value;
     setAccordionFields((prev) => ({ ...prev, [field]: value }));
-  
+
     axios.post("http://localhost:8080/api/crDataPush", {
       issueId: id,
+      user:username,
       [field]: value,
     });
   };
-  
+
   const handleAccordionEditableChange = (field, value) => {
     setAccordionFields((prev) => ({ ...prev, [field]: value }));
-  
+
     axios.post("http://localhost:8080/api/crDataPush", {
       issueId: id,
+     
       [field]: value,
     });
   };
-  
+
   // Inline styles
   const styles = {
     container: {
@@ -491,13 +535,13 @@ function getISTDateTime() {
   const [issueData, setIssueData] = useState("");
   useEffect(() => {
     axios
-      .get(`http://localhost:8080/api/GetIssuedetailsbyissueid/${id}`)
+      .get(`http://localhost:8080/api/fetch/${id}`)
       .then((response) => {
         setIssueData(response.data);
         setStatus(response.data.status || "Open");
-  
+
         let initialFields;
-        if (response.data.issueType === "Bug") {
+        if (response.data.issueType === "Defect") {
           initialFields = {
             "Description": response.data.description || "NA",
             "Steps to Reproduce": response.data.stepsToReproduce || "NA",
@@ -509,7 +553,8 @@ function getISTDateTime() {
             "Description": response.data.description || "NA",
             "In Scope": response.data.inScope || "NA",
             "Out Scope": response.data.outScope || "NA",
-            "Business Need Benefits Details": response.data.businessNeedBenefitsDetails || "NA",
+            "Qualitative Benefits": response.data.qualitativeBenefits || "NA",
+            "Quantitaitve Benefits": response.data.quantitativeBenefits || "NA"
           };
         }
         setAccordionFields({
@@ -524,17 +569,17 @@ function getISTDateTime() {
       .catch((error) => {
         console.error("Error fetching issue details:", error);
       });
-  
+
     fetchComments();
   }, [id]);
-  
- 
+
+
   const fetchTransitions = () => {
     axios
       .post("http://localhost:8080/api/workflow/transitions", {
         userRole: userData.userRole,
         currentStatus: status,
-        workflowId: "WF-1"
+        workflowId: issueData.workflowId
       })
       .then((response) => {
         setTransitionOptions(response.data.transition || []);
@@ -592,19 +637,19 @@ function getISTDateTime() {
     if (!dateStr) return "—";
     return new Date(dateStr).toLocaleDateString();
   };
-  
+
   const calculateDuration = (start, end) => {
     if (!start || !end) return "—";
     const diff = (new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24);
     return `${diff} days`;
   };
-  
+
   const calculateDelay = (plannedEnd, actualEnd) => {
     if (!plannedEnd || !actualEnd) return "—";
     const delay = (new Date(actualEnd) - new Date(plannedEnd)) / (1000 * 60 * 60 * 24);
     return delay > 0 ? `${delay} days` : "On time";
   };
-  
+
   // const handleAccordionChange = (e, field) => {
   //   setAccordionFields(prev => ({
   //     ...prev,
@@ -634,13 +679,14 @@ function getISTDateTime() {
       ...prev,
       [label]: value,
     }));
-  
+
     // Prepare request payload
     const payload = {
       issueId: id,
+      issueType:issueData.issueType,
       [label.toLowerCase().replace(/\s+/g, "")]: value  // Convert label to camelCase-ish keys like "description"
     };
-  
+
     // Rename keys if needed to match exact backend expectation
     if (label === "Steps to Reproduce") payload.stepsToReproduce = value;
     else if (label === "Expected Output") payload.expectedOutput = value;
@@ -648,11 +694,12 @@ function getISTDateTime() {
     else if (label === "Description") payload.description = value;
     // else if (label === "In Scope") payload.inScope = value;
     // else if (label === "Out Scope") payload.outScope = value;
-    else if (label === "Business Need Benefits Details") payload.businessNeedBenefitsDetails = value;
-  
+    else if (label === "Qualitative Benefits") payload.qualitativeBenefits = value;
+    else if (label === "Quantitative Benefits") payload.quantitativeBenefits = value;
+
     // Remove unwanted derived key (from label.toLowerCase())
     // delete payload[label.toLowerCase().replace(/\s+/g, "")];
-  
+
     // Send to API
     axios.post("http://localhost:8080/api/crDataPush", payload)
       .then(() => {
@@ -662,7 +709,7 @@ function getISTDateTime() {
         console.error(`Error updating ${label}:`, err);
       });
   };
-  
+
   // Populate from API once it's loaded
   useEffect(() => {
     if (issueData) {
@@ -680,7 +727,7 @@ function getISTDateTime() {
     <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
       <Card flexDirection="column" w="100%" px="25px" mb="20px" overflow="hidden">
         <Popup isOpen={isPopupOpen} data={message} onClose={handleClosePopup} />
-        <SubtaskPopup isOpen={isSubtaskPopupOpen} onClose={handleSubtaskClosePopup} data={issueData}/>
+        <SubtaskPopup isOpen={isSubtaskPopupOpen} onClose={handleSubtaskClosePopup} data={issueData} />
         <div style={{ display: "flex", width: "100%" }}>
 
           {/* Left Section (70%) */}
@@ -709,52 +756,52 @@ function getISTDateTime() {
 
               {/* Editable Sections */}
               <div style={{ margin: "5px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              {issueData.issueType === "Bug" ? (
-  ["Description", "Steps to Reproduce", "Expected Output", "Actual Output"].map((label, index) => (
-    <div key={index} style={{ margin: "5px" }}>
-      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
-      <div>
-        <Editable
-          textAlign="start"
-          value={editableFields[label] || ""}
-          onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
-  onChange={(val) =>
-    setEditableFields((prev) => ({
-      ...prev,
-      [label]: val,
-    }))
-  }
-        >
-          <EditablePreview />
-          <EditableInput />
-        </Editable>
-      </div>
-    </div>
-  ))
+                {issueData.issueType === "Bug" ? (
+                  ["Description", "Steps to Reproduce", "Expected Output", "Actual Output"].map((label, index) => (
+                    <div key={index} style={{ margin: "5px" }}>
+                      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
+                      <div>
+                        <Editable
+                          textAlign="start"
+                          value={editableFields[label] || ""}
+                          onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
+                          onChange={(val) =>
+                            setEditableFields((prev) => ({
+                              ...prev,
+                              [label]: val,
+                            }))
+                          }
+                        >
+                          <EditablePreview />
+                          <EditableInput />
+                        </Editable>
+                      </div>
+                    </div>
+                  ))
 
-) : (
-  ["Description",  "Business Need Benefits Details"].map((label, index) => (
-    <div key={index} style={{ margin: "5px" }}>
-      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
-      <div>
-        <Editable
-          textAlign="start"
-          value={editableFields[label] || ""}
-          onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
-          onChange={(val) =>
-            setEditableFields((prev) => ({
-              ...prev,
-              [label]: val,
-            }))
-          }
-        >
-          <EditablePreview />
-          <EditableInput />
-        </Editable>
-      </div>
-    </div>
-  ))
-)}
+                ) : (
+                  ["Description", "Quantitaitve Benefits","Qualitative Benefits"].map((label, index) => (
+                    <div key={index} style={{ margin: "5px" }}>
+                      <label style={{ fontSize: "18px", fontWeight: 500 }}>{label}</label>
+                      <div>
+                        <Editable
+                          textAlign="start"
+                          value={editableFields[label] || ""}
+                          onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
+                          onChange={(val) =>
+                            setEditableFields((prev) => ({
+                              ...prev,
+                              [label]: val,
+                            }))
+                          }
+                        >
+                          <EditablePreview />
+                          <EditableInput />
+                        </Editable>
+                      </div>
+                    </div>
+                  ))
+                )}
 
                 <div style={{ margin: "5px" }}>
                   <label style={{ fontSize: "18px", fontWeight: 500 }}>Attachments</label>
@@ -869,38 +916,38 @@ function getISTDateTime() {
 
                 {/* Attachment Modal */}
                 <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} isCentered>
-                      <ModalOverlay />
-                      <ModalContent
-                        maxW={{ base: "90vw", sm: "80vw", md: "70vw", lg: "60vw", xl: "50vw" }}
-                      >
-                        <ModalHeader>{previewFile?.filename}</ModalHeader>
-                        <ModalCloseButton />
-                        <ModalBody>
-                          {previewFile?.type === "pdf" ? (
-                            <iframe
-                              src={previewFile.blobUrl}
-                              width="100%"
-                              height="500px"
-                              title={previewFile.filename}
-                              style={{ borderRadius: "8px", border: "1px solid #ddd" }}
-                            />
-                          ) : ["png", "jpg", "jpeg", "gif", "webp"].includes(previewFile?.type) ? (
-                            <Image
-                              src={previewFile.blobUrl}
-                              alt={previewFile.filename}
-                              maxW="100%"
-                              maxH="500px"
-                              borderRadius="md"
-                            />
-                          ) : (
-                            <Text>Preview not available for this file type.</Text>
-                          )}
-                        </ModalBody>
-                        <ModalFooter>
-                          <Button onClick={() => setIsPreviewOpen(false)}>Close</Button>
-                        </ModalFooter>
-                      </ModalContent>
-                    </Modal>
+                  <ModalOverlay />
+                  <ModalContent
+                    maxW={{ base: "90vw", sm: "80vw", md: "70vw", lg: "60vw", xl: "50vw" }}
+                  >
+                    <ModalHeader>{previewFile?.filename}</ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                      {previewFile?.type === "pdf" ? (
+                        <iframe
+                          src={previewFile.blobUrl}
+                          width="100%"
+                          height="500px"
+                          title={previewFile.filename}
+                          style={{ borderRadius: "8px", border: "1px solid #ddd" }}
+                        />
+                      ) : ["png", "jpg", "jpeg", "gif", "webp"].includes(previewFile?.type) ? (
+                        <Image
+                          src={previewFile.blobUrl}
+                          alt={previewFile.filename}
+                          maxW="100%"
+                          maxH="500px"
+                          borderRadius="md"
+                        />
+                      ) : (
+                        <Text>Preview not available for this file type.</Text>
+                      )}
+                    </ModalBody>
+                    <ModalFooter>
+                      <Button onClick={() => setIsPreviewOpen(false)}>Close</Button>
+                    </ModalFooter>
+                  </ModalContent>
+                </Modal>
                 <div style={{ margin: "5px" }}>
                   <label style={{ fontSize: "18px", fontWeight: 500 }}>Activity</label>
 
@@ -913,16 +960,17 @@ function getISTDateTime() {
                       if (index === 2) {
                         fetchAttachments();
                       }
-                      if(index === 0){
+                      if (index === 0) {
                         fetchComments();
                       }
-                    
-                      if (index === 3) fetchDateDetails(); 
-                      if (index === 4 || index === 1) fetchSubTasksAndLinkedIssues();
+
+                      if (index === 3) fetchDateDetails();
+                      if (index === 1) fetchLinkedIssues();
+                      if (index === 4) fetchSubTasks();
                     }}
                   >
                     {/* Preview Modal */}
-                    
+
 
 
                     <TabList>
@@ -944,112 +992,112 @@ function getISTDateTime() {
                     </TabList>
 
                     <TabPanels>
-                    <TabPanel>
-  {/* New Comment Input */}
-  <ReactQuill ref={quillRef} theme="snow" value={editorValue} onChange={setEditorValue} />
-  <Button colorScheme="blue" mt={3} onClick={handleAddComment}>Submit Comment</Button>
+                      <TabPanel>
+                        {/* New Comment Input */}
+                        <ReactQuill ref={quillRef} theme="snow" value={editorValue} onChange={setEditorValue} />
+                        <Button colorScheme="blue" mt={3} onClick={handleAddComment}>Submit Comment</Button>
 
-  {/* Comment List */}
-  <VStack mt={5} align="stretch" spacing={4}>
-    <Text fontSize="lg" fontWeight="bold">Comments:</Text>
-    {comments.length === 0 ? (
-      <Text>No comments yet</Text>
-    ) : (
-      comments.map((comment, index) => (
-        <Box key={index} p={4} borderWidth={1} borderRadius="lg" bg="gray.50">
-          <HStack mb={2} justify="space-between">
-            <HStack>
-              <Avatar name={comment.author} size="sm" />
-              <Box>
-                <Text fontWeight="bold">{comment.author}</Text>
-                <Text fontSize="sm" color="gray.500">{comment.timestamp}</Text>
-              </Box>
-            </HStack>
-            {comment.author === username && (
-              <IconButton
-                size="sm"
-                icon={<EditIcon />}
-                aria-label="Edit comment"
-                onClick={() => handleEditClick(index)}
-              />
-            )}
-          </HStack>
+                        {/* Comment List */}
+                        <VStack mt={5} align="stretch" spacing={4}>
+                          <Text fontSize="lg" fontWeight="bold">Comments:</Text>
+                          {comments.length === 0 ? (
+                            <Text>No comments yet</Text>
+                          ) : (
+                            comments.map((comment, index) => (
+                              <Box key={index} p={4} borderWidth={1} borderRadius="lg" bg="gray.50">
+                                <HStack mb={2} justify="space-between">
+                                  <HStack>
+                                    <Avatar name={comment.author} size="sm" />
+                                    <Box>
+                                      <Text fontWeight="bold">{comment.author}</Text>
+                                      <Text fontSize="sm" color="gray.500">{comment.timestamp}</Text>
+                                    </Box>
+                                  </HStack>
+                                  {comment.author === username && (
+                                    <IconButton
+                                      size="sm"
+                                      icon={<EditIcon />}
+                                      aria-label="Edit comment"
+                                      onClick={() => handleEditClick(index)}
+                                    />
+                                  )}
+                                </HStack>
 
-          {isEditing && editIndex === index ? (
-            <>
-              <ReactQuill theme="snow" value={editValue} onChange={setEditValue} />
-              <Button mt={2} colorScheme="green" size="sm" onClick={handleSaveEdit}>Save</Button>
-            </>
-          ) : (
-            <Box dangerouslySetInnerHTML={{ __html: comment.text }} />
-          )}
+                                {isEditing && editIndex === index ? (
+                                  <>
+                                    <ReactQuill theme="snow" value={editValue} onChange={setEditValue} />
+                                    <Button mt={2} colorScheme="green" size="sm" onClick={handleSaveEdit}>Save</Button>
+                                  </>
+                                ) : (
+                                  <Box dangerouslySetInnerHTML={{ __html: comment.text }} />
+                                )}
 
-          <Divider mt={3} />
-        </Box>
-      ))
-    )}
-  </VStack>
-</TabPanel>
+                                <Divider mt={3} />
+                              </Box>
+                            ))
+                          )}
+                        </VStack>
+                      </TabPanel>
 
                       <TabPanel>
-  <Box maxH="400px" overflowY="auto" border="1px solid #E2E8F0" borderRadius="md" p={3}>
-    <Text fontWeight="bold" fontSize="md" mb={2}>Linked Work Items</Text>
-    <Text fontSize="sm" mb={3} color="gray.500">is blocked by</Text>
+                        <Box maxH="400px" overflowY="auto" border="1px solid #E2E8F0" borderRadius="md" p={3}>
+                          <Text fontWeight="bold" fontSize="md" mb={2}>Linked Work Items</Text>
+                          <Text fontSize="sm" mb={3} color="gray.500">is blocked by</Text>
 
-    <VStack spacing={3} align="stretch">
-      {linkedIssues.map((issue) => (
-        <Flex
-          key={issue.id}
-          p={3}
-          borderRadius="md"
-          bg="white"
-          boxShadow="sm"
-          align="center"
-          justify="space-between"
-          _hover={{ boxShadow: "md", cursor: "pointer" }}
-        >
-          {/* Left Section: Issue Info */}
-          <Flex align="center" gap={3}>
-            <Icon as={FaBug} color="red.500" boxSize={5} />
-            <Box>
-              <Text
-                onClick={() => window.location.href = `/admin/view/${issue.issueId}`}
-                color="blue.600"
-                fontWeight="bold"
-                _hover={{ textDecoration: "underline" }}
-              >
-                {issue.issueId}
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                {issue.summary.length > 80
-                  ? issue.summary.slice(0, 77) + "..."
-                  : issue.summary}
-              </Text>
-            </Box>
-          </Flex>
+                          <VStack spacing={3} align="stretch">
+                            {linkedIssues.map((issue) => (
+                              <Flex
+                                key={issue.id}
+                                p={3}
+                                borderRadius="md"
+                                bg="white"
+                                boxShadow="sm"
+                                align="center"
+                                justify="space-between"
+                                _hover={{ boxShadow: "md", cursor: "pointer" }}
+                              >
+                                {/* Left Section: Issue Info */}
+                                <Flex align="center" gap={3}>
+                                  <Icon as={FaBug} color="red.500" boxSize={5} />
+                                  <Box>
+                                    <Text
+                                      onClick={() => window.location.href = `/admin/view/${issue.issueId}`}
+                                      color="blue.600"
+                                      fontWeight="bold"
+                                      _hover={{ textDecoration: "underline" }}
+                                    >
+                                      {issue.issueId}
+                                    </Text>
+                                    <Text fontSize="sm" color="gray.600">
+                                      {issue.summary.length > 80
+                                        ? issue.summary.slice(0, 77) + "..."
+                                        : issue.summary}
+                                    </Text>
+                                  </Box>
+                                </Flex>
 
-          {/* Right Section: Assignee + Status */}
-          <Flex align="center" gap={2}>
-            <Tooltip label={issue.assignee} fontSize="sm" hasArrow>
-              <Avatar size="sm" icon={<FaUserCircle />} />
-            </Tooltip>
-            <Tag
-              size="sm"
-              colorScheme={
-                issue.status === "Closed" ? "green" :
-                issue.status === "In Progress" ? "yellow" :
-                issue.status === "Open" ? "blue" :
-                "gray"
-              }
-            >
-              {issue.status}
-            </Tag>
-          </Flex>
-        </Flex>
-      ))}
-    </VStack>
-  </Box>
-</TabPanel>
+                                {/* Right Section: Assignee + Status */}
+                                <Flex align="center" gap={2}>
+                                  <Tooltip label={issue.assignee} fontSize="sm" hasArrow>
+                                    <Avatar size="sm" icon={<FaUserCircle />} />
+                                  </Tooltip>
+                                  <Tag
+                                    size="sm"
+                                    colorScheme={
+                                      issue.status === "Closed" ? "green" :
+                                        issue.status === "In Progress" ? "yellow" :
+                                          issue.status === "Open" ? "blue" :
+                                            "gray"
+                                    }
+                                  >
+                                    {issue.status}
+                                  </Tag>
+                                </Flex>
+                              </Flex>
+                            ))}
+                          </VStack>
+                        </Box>
+                      </TabPanel>
 
 
 
@@ -1142,139 +1190,139 @@ function getISTDateTime() {
                           </VStack>
                         )}
                       </TabPanel>
-                    
+
 
                       <TabPanel>
-      {/* Dates tab panel content */}
-      <Table variant="simple" size="sm">
-        <Thead bg="gray.100">
-          <Tr>
-            <Th>Phase</Th>
-            <Th>Planned Start</Th>
-            <Th>Planned End</Th>
-            <Th>Actual Start</Th>
-            <Th>Actual End</Th>
-            <Th>Duration</Th>
-            <Th>Delay</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {[
-            {
-              title: "FSD",
-              plannedStart: dateDetails?.plannedFSDStartDate,
-              plannedEnd: dateDetails?.plannedFSDEndDate,
-              actualStart: null,
-              actualEnd: null,
-            },
-            {
-              title: "QA Testing",
-              plannedStart: dateDetails?.plannedQaTestingStartDate,
-              plannedEnd: dateDetails?.plannedQaTestingEndDate,
-              actualStart: dateDetails?.actualQaTestingStartDate,
-              actualEnd: dateDetails?.actualQaTestingEndDate,
-            },
-            {
-              title: "UAT",
-              plannedStart: dateDetails?.plannedUatStartDate,
-              plannedEnd: dateDetails?.plannedUatEndDate,
-              actualStart: null,
-              actualEnd: null,
-            },
-            {
-              title: "Go Live",
-              plannedStart: dateDetails?.plannedGoLiveDate,
-              plannedEnd: null,
-              actualStart: null,
-              actualEnd: dateDetails?.actualGoLiveDate,
-            },
-          ].map((row) => {
-            const formatDate = (d) => d ? new Date(d).toLocaleDateString() : "-";
-            const duration = (s, e) => (s && e) ? `${(new Date(e) - new Date(s)) / (1000 * 3600 * 24)} day(s)` : "-";
-            const delay = (planned, actual) => (planned && actual)
-              ? `${(new Date(actual) - new Date(planned)) / (1000 * 3600 * 24)} day(s)`
-              : "-";
+                        {/* Dates tab panel content */}
+                        <Table variant="simple" size="sm">
+                          <Thead bg="gray.100">
+                            <Tr>
+                              <Th>Phase</Th>
+                              <Th>Planned Start</Th>
+                              <Th>Planned End</Th>
+                              <Th>Actual Start</Th>
+                              <Th>Actual End</Th>
+                              <Th>Duration</Th>
+                              <Th>Delay</Th>
+                            </Tr>
+                          </Thead>
+                          <Tbody>
+                            {[
+                              {
+                                title: "FSD",
+                                plannedStart: dateDetails?.plannedFSDStartDate,
+                                plannedEnd: dateDetails?.plannedFSDEndDate,
+                                actualStart: null,
+                                actualEnd: null,
+                              },
+                              {
+                                title: "QA Testing",
+                                plannedStart: dateDetails?.plannedQaTestingStartDate,
+                                plannedEnd: dateDetails?.plannedQaTestingEndDate,
+                                actualStart: dateDetails?.actualQaTestingStartDate,
+                                actualEnd: dateDetails?.actualQaTestingEndDate,
+                              },
+                              {
+                                title: "UAT",
+                                plannedStart: dateDetails?.plannedUatStartDate,
+                                plannedEnd: dateDetails?.plannedUatEndDate,
+                                actualStart: null,
+                                actualEnd: null,
+                              },
+                              {
+                                title: "Go Live",
+                                plannedStart: dateDetails?.plannedGoLiveDate,
+                                plannedEnd: null,
+                                actualStart: null,
+                                actualEnd: dateDetails?.actualGoLiveDate,
+                              },
+                            ].map((row) => {
+                              const formatDate = (d) => d ? new Date(d).toLocaleDateString() : "-";
+                              const duration = (s, e) => (s && e) ? `${(new Date(e) - new Date(s)) / (1000 * 3600 * 24)} day(s)` : "-";
+                              const delay = (planned, actual) => (planned && actual)
+                                ? `${(new Date(actual) - new Date(planned)) / (1000 * 3600 * 24)} day(s)`
+                                : "-";
 
-            return (
-              <Tr key={row.title}>
-                <Td>{row.title}</Td>
-                <Td>{formatDate(row.plannedStart)}</Td>
-                <Td>{formatDate(row.plannedEnd)}</Td>
-                <Td>{formatDate(row.actualStart)}</Td>
-                <Td>{formatDate(row.actualEnd)}</Td>
-                <Td>{duration(row.plannedStart, row.plannedEnd)}</Td>
-                <Td>{delay(row.plannedEnd, row.actualEnd)}</Td>
-              </Tr>
-            );
-          })}
-        </Tbody>
-      </Table>
-      </TabPanel>
-      <TabPanel>
-  <Box maxH="500px" overflowY="auto" p={2}>
-    <Text fontWeight="bold" fontSize="md" mb={3}>Subtasks</Text>
+                              return (
+                                <Tr key={row.title}>
+                                  <Td>{row.title}</Td>
+                                  <Td>{formatDate(row.plannedStart)}</Td>
+                                  <Td>{formatDate(row.plannedEnd)}</Td>
+                                  <Td>{formatDate(row.actualStart)}</Td>
+                                  <Td>{formatDate(row.actualEnd)}</Td>
+                                  <Td>{duration(row.plannedStart, row.plannedEnd)}</Td>
+                                  <Td>{delay(row.plannedEnd, row.actualEnd)}</Td>
+                                </Tr>
+                              );
+                            })}
+                          </Tbody>
+                        </Table>
+                      </TabPanel>
+                      <TabPanel>
+                        <Box maxH="500px" overflowY="auto" p={2}>
+                          <Text fontWeight="bold" fontSize="md" mb={3}>Subtasks</Text>
 
-    <VStack spacing={4} align="stretch">
-      {subTasks.map((task) => {
-        let typeIcon;
-        switch (task.issueType.toLowerCase()) {
-          case 'maintenance':
-            typeIcon = <MdAttachMoney color="green" size={20} />;
-            break;
-          case 'qa':
-            typeIcon = <PiTestTubeFill color="purple" size={20} />;
-            break;
-          default:
-            typeIcon = <MdAssignment color="blue" size={20} />;
-        }
+                          <VStack spacing={4} align="stretch">
+                            {subTasks.map((task) => {
+                              let typeIcon;
+                              switch (task.workType.toLowerCase()) {
+                                case 'maintenance':
+                                  typeIcon = <MdAttachMoney color="green" size={20} />;
+                                  break;
+                                case 'qa':
+                                  typeIcon = <PiTestTubeFill color="purple" size={20} />;
+                                  break;
+                                default:
+                                  typeIcon = <MdAssignment color="blue" size={20} />;
+                              }
 
-        const priorityIcon = <FaArrowUp color="red" />;
-        const statusColor =
-          task.status.toLowerCase().includes("close") ? "green.100"
-          : task.status.toLowerCase().includes("development") ? "blue.100"
-          : "gray.100";
+                              const priorityIcon = <FaArrowUp color="red" />;
+                              const statusColor =
+                                task.status.toLowerCase().includes("close") ? "green.100"
+                                  : task.status.toLowerCase().includes("development") ? "blue.100"
+                                    : "gray.100";
 
-        return (
-          <Flex
-            key={task.id}
-            p={4}
-            bg="white"
-            borderRadius="md"
-            boxShadow="sm"
-            justify="space-between"
-            align="center"
-            _hover={{ boxShadow: "md", cursor: "pointer" }}
-            onClick={() => window.location.href = `/admin/view/${task.issueId}`}
-          >
-            {/* Left section with icon, ID, Summary */}
-            <HStack spacing={4}>
-              <Box>{typeIcon}</Box>
-              <Box>
-                <Text fontWeight="bold" color="blue.600">
-                  {task.issueId}
-                </Text>
-                <Text fontSize="sm" color="gray.600" noOfLines={1}>
-                  {task.summary}
-                </Text>
-              </Box>
-            </HStack>
+                              return (
+                                <Flex
+                                  key={task.id}
+                                  p={4}
+                                  bg="white"
+                                  borderRadius="md"
+                                  boxShadow="sm"
+                                  justify="space-between"
+                                  align="center"
+                                  _hover={{ boxShadow: "md", cursor: "pointer" }}
+                                  onClick={() => window.location.href = `/admin/view/${task.issueId}`}
+                                >
+                                  {/* Left section with icon, ID, Summary */}
+                                  <HStack spacing={4}>
+                                    <Box>{typeIcon}</Box>
+                                    <Box>
+                                      <Text fontWeight="bold" color="blue.600">
+                                        {task.issueId}
+                                      </Text>
+                                      <Text fontSize="sm" color="gray.600" noOfLines={1}>
+                                        {task.summary}
+                                      </Text>
+                                    </Box>
+                                  </HStack>
 
-            {/* Right section with Priority, Assignee (Avatar only), Status */}
-            <HStack spacing={4}>
-              <Box>{priorityIcon}</Box>
-              <Tooltip label={task.assignee} fontSize="sm" hasArrow>
-                <Avatar size="sm" icon={<FaUserCircle />} name={task.assignee} />
-              </Tooltip>
-              <Tag bg={statusColor} color="gray.800" fontWeight="bold" px={3} py={1}>
-                {task.status}
-              </Tag>
-            </HStack>
-          </Flex>
-        );
-      })}
-    </VStack>
-  </Box>
-</TabPanel>
+                                  {/* Right section with Priority, Assignee (Avatar only), Status */}
+                                  <HStack spacing={4}>
+                                    <Box>{priorityIcon}</Box>
+                                    <Tooltip label={task.assignee} fontSize="sm" hasArrow>
+                                      <Avatar size="sm" icon={<FaUserCircle />} name={task.assignee} />
+                                    </Tooltip>
+                                    <Tag bg={statusColor} color="gray.800" fontWeight="bold" px={3} py={1}>
+                                      {task.status}
+                                    </Tag>
+                                  </HStack>
+                                </Flex>
+                              );
+                            })}
+                          </VStack>
+                        </Box>
+                      </TabPanel>
 
 
 
@@ -1351,17 +1399,7 @@ function getISTDateTime() {
                           </MenuItem>
                         ))}
 
-                        {/* <MenuItem
-                          onClick={() => {
-                            console.log("View workflow clicked");
-                          }}
-                          mt={1}
-                          fontSize="sm"
-                          fontWeight="medium"
-                          color="blue.500"
-                        >
-                          View workflow
-                        </MenuItem> */}
+                        
                       </MenuList>
                     </Menu>
                   </div>
@@ -1371,216 +1409,308 @@ function getISTDateTime() {
             </div>
 
             <div style={{ marginTop: "10px", marginLeft: "10px" }}>
-            <div>
-  <Accordion allowMultiple>
-    {items.map((item, index) => (
-      <AccordionItem key={index}>
-        <h2>
-          <AccordionButton>
-            <Box flex="1" textAlign="left">{item.title}</Box>
-            <AccordionIcon />
-          </AccordionButton>
-        </h2>
+              <div>
+                <Accordion allowMultiple>
+                  {items.map((item, index) => (
+                    <AccordionItem key={index}>
+                      <h2>
+                        <AccordionButton>
+                          <Box flex="1" textAlign="left">{item.title}</Box>
+                          <AccordionIcon />
+                        </AccordionButton>
+                      </h2>
 
-        <AccordionPanel>
-          {index === 0 ? (
-            <VStack spacing={4} align="stretch">
-              {/* Assignee */}
-              <HStack justify="space-between">
-                <Text>Assignee</Text>
-                <Select
-                  value={accordionFields.assignee}
-                  onChange={(e) => handleAccordionChange(e, "assignee")}
-                  width="200px"
-                >
-                  <option value="Saurav Kumar">Saurav Kumar</option>
-                  <option value="Om Thange">Om Thange</option>
-                  <option value="Prathamesh Kokane">Prathamesh Kokane</option>
-                </Select>
-              </HStack>
+                      <AccordionPanel>
+                        {index === 0 ? (
+                          <VStack spacing={4} align="stretch">
+                            {/* Assignee */}
+                            <HStack justify="space-between">
+                              <Text>Assignee</Text>
+                              <Select
+                                value={accordionFields.assignee}
+                                onChange={(e) => handleAccordionChange(e, "assignee")}
+                                width="200px"
+                              >
+                                <option value="saurav.kumar10">Saurav Kumar</option>
+                                <option value="om.thange">Om Thange</option>
+                                <option value="prathameshKokane">Prathamesh Kokane</option>
+                              </Select>
+                            </HStack>
 
-              {/* Reporter - Editable */}
-              <HStack justify="space-between">
-                <Text>Reporter</Text>
-                <Editable
-                  value={accordionFields.reporter}
-                  onChange={(val) => handleAccordionEditableChange("reporter", val)}
-                >
-                  <EditablePreview />
-                  <EditableInput width="200px" />
-                </Editable>
-              </HStack>
+                            {/* Reporter - Editable */}
+                            <HStack justify="space-between">
+                              <Text>Reporter</Text>
+                              <Editable
+                                value={accordionFields.reporter}
+                                onChange={(val) => handleAccordionEditableChange("reporter", val)}
+                              >
+                                <EditablePreview />
+                                <EditableInput width="200px" />
+                              </Editable>
+                            </HStack>
 
-              {/* Priority */}
-              <HStack justify="space-between">
-                <Text>Priority</Text>
-                <Select
-                  value={accordionFields.priority}
-                  onChange={(e) => handleAccordionChange(e, "priority")}
-                  width="200px"
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </Select>
-              </HStack>
+                            {/* Priority */}
+                            <HStack justify="space-between">
+                              <Text>Priority</Text>
+                              <Select
+                                value={accordionFields.priority}
+                                onChange={(e) => handleAccordionChange(e, "priority")}
+                                width="200px"
+                              >
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                              </Select>
+                            </HStack>
 
-              {/* CR Approved Date (Optional - view only for now) */}
-              <HStack justify="space-between">
-                <Text>CR Approved Date</Text>
-                <Text>{accordionFields.crApprovedDate || "NA"}</Text>
-              </HStack>
+                            {/* CR Approved Date (Optional - view only for now) */}
+                            <HStack justify="space-between">
+                              <Text>CR Approved Date</Text>
+                              <Text>{accordionFields.crApprovedDate || "NA"}</Text>
+                            </HStack>
 
-              {/* Primary BA - Editable */}
-              <HStack justify="space-between">
-                <Text>Primary BA</Text>
-                <Editable
-                  value={accordionFields.primaryBA}
-                  onChange={(val) => handleAccordionEditableChange("primaryBA", val)}
-                >
-                  <EditablePreview />
-                  <EditableInput width="200px" />
-                </Editable>
-              </HStack>
-            </VStack>
-          ) : (
-            <Text>{item.text}</Text>
-          )}
-        </AccordionPanel>
-      </AccordionItem>
-    ))}
-  </Accordion>
-</div>
+                            {/* Primary BA - Editable */}
+                            <HStack justify="space-between">
+                              <Text>Primary BA</Text>
+                              <Editable
+                                value={accordionFields.primaryBA}
+                                onChange={(val) => handleAccordionEditableChange("primaryBA", val)}
+                              >
+                                <EditablePreview />
+                                <EditableInput width="200px" />
+                              </Editable>
+                            </HStack>
+                          </VStack>
+                        ) : (
+                          <Text>{item.text}</Text>
+                        )}
+                      </AccordionPanel>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
 
             </div>
           </div>
         </div>
       </Card>
       <Modal
-        isOpen={isTransitionPopupOpen}
-        onClose={() => setIsTransitionPopupOpen(false)}
-        size="xl"
-        isCentered
-      >
-        <ModalOverlay />
-        <ModalContent borderRadius="lg" boxShadow="lg">
-          <ModalHeader fontWeight="bold" fontSize="xl">
-            {transitionPopupData?.toStatus} - Required Fields
-          </ModalHeader>
-          <ModalCloseButton />
-          {/* <ModalBody>
-            {previewFile?.mimeType === "application/pdf" ? (
-              <iframe
-                src={previewFile.blobUrl}
-                width="100%"
-                height="500px"
-                title={previewFile.filename}
-              />
-            ) : previewFile?.mimeType?.startsWith("image") ? (
-              <Image
-                src={previewFile.blobUrl}
-                alt={previewFile.filename}
-                maxW="100%"
-                borderRadius="md"
-              />
-            ) : (
-              <Text>Preview not available for this file type.</Text>
-            )}
-          </ModalBody> */}
-        <ModalBody>
-            <VStack spacing={5} align="stretch">
-              {transitionPopupData?.requiredFields
-                ?.split(",")
-                .map((field) => {
-                  const trimmedField = field.trim();
-                  const isDate = trimmedField.toLowerCase().includes("date");
+  isOpen={isTransitionPopupOpen}
+  onClose={() => setIsTransitionPopupOpen(false)}
+  size="xl"
+  isCentered
+>
+  <ModalOverlay />
+  <ModalContent borderRadius="lg" boxShadow="lg">
+    <ModalHeader fontWeight="bold" fontSize="xl">
+      {transitionPopupData?.toStatus} - Required Fields
+    </ModalHeader>
+    <ModalCloseButton />
 
-                  return (
-                    <FormControl key={trimmedField}>
-                      <FormLabel fontWeight="medium">
-                        {trimmedField} <span style={{ color: 'red' }}>*</span>
-                      </FormLabel>
-                      <Input
-                        type={isDate ? "date" : "text"}
-                        placeholder={`Enter ${trimmedField}`}
-                        value={transitionFormData[trimmedField] || ""}
-                        onChange={(e) =>
-                          setTransitionFormData((prev) => ({
-                            ...prev,
-                            [trimmedField]: e.target.value,
-                          }))
-                        }
-                      />
-                    </FormControl>
-                  );
-                })}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              colorScheme="blue"
-              mr={3}
-              onClick={async () => {
-                const requiredFields = transitionPopupData?.requiredFields
-                  ?.split(",")
-                  .map((f) => f.trim()) || [];
+    <ModalBody>
+      <VStack spacing={5} align="stretch">
+        {transitionPopupData?.requiredFields?.split(",").map((field) => {
+          const trimmedField = field.trim();
+          const isDate = trimmedField.toLowerCase().includes("date");
 
-                const isFormValid = requiredFields.every(
-                  (field) => transitionFormData[field]
-                );
-
-                if (!isFormValid) {
-                  toast.error("Please fill all required fields.");
-                  return;
-                }
-
-                // Build payload for crDataPush API
-                const payload = {
-                  issueId: id, // Replace "IT-1" with your fallback logic
-                  status: transitionPopupData?.toStatus,
-                };
-
-                requiredFields.forEach((field) => {
-                  const camelKey = toCamelCase(field); // Convert to camelCase
-                  payload[camelKey] = transitionFormData[field];
-                });
-
-                try {
-                  const response = await fetch("http://localhost:8080/api/crDataPush", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(payload),
-                  });
-
-                  if (!response.ok) {
-                    throw new Error("Failed to submit the form.");
+          // Assignee autocomplete input
+          if (trimmedField.toLowerCase() === "assignee") {
+            return (
+              <FormControl key={trimmedField} position="relative" isRequired>
+                <FormLabel>
+                  {trimmedField} <span style={{ color: "red" }}>*</span>
+                </FormLabel>
+                <Input
+                  value={transitionFormData.assignee || ""}
+                  onChange={(e) =>
+                    setTransitionFormData((prev) => ({
+                      ...prev,
+                      assignee: e.target.value,
+                    }))
                   }
+                  autoComplete="off"
+                  borderColor="gray.300"
+                  _hover={{ borderColor: "brandScheme.400" }}
+                  _focus={{ borderColor: "brandScheme.400" }}
+                  backgroundColor="white"
+                />
+                {userSuggestions.length > 0 && (
+                  <Box
+                    mt={1}
+                    border="1px solid"
+                    borderColor="gray.200"
+                    borderRadius="md"
+                    maxHeight="200px"
+                    overflowY="auto"
+                    bg="white"
+                    zIndex={10}
+                    position="absolute"
+                    width="100%"
+                  >
+                    <List spacing={1}>
+                      {userSuggestions.map((user) => (
+                        <ListItem
+                          key={user.id}
+                          px={3}
+                          py={1}
+                          _hover={{ bg: "gray.100", cursor: "pointer" }}
+                          onClick={() => {
+                            setTransitionFormData((prev) => ({
+                              ...prev,
+                              assignee: user.username,
+                            }));
+                            setUserSuggestions([]);
+                          }}
+                        >
+                          {user.username}
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Box>
+                )}
+              </FormControl>
+            );
+          }
 
-                  toast.success("Form submitted successfully!");
-                  setTransitionFormData({});
-                  setIsTransitionPopupOpen(false);
-                  handleStatusChange(transitionPopupData?.toStatus);
-                } catch (error) {
-                  toast.error("Error submitting the form.");
-                  console.error(error);
+          // Comments rich text editor
+          if (trimmedField.toLowerCase() === "comments") {
+            return (
+              <FormControl key={trimmedField} isRequired>
+                <FormLabel>
+                  {trimmedField} <span style={{ color: "red" }}>*</span>
+                </FormLabel>
+                <ReactQuill
+                  theme="snow"
+                  value={transitionFormData.comments || ""}
+                  onChange={(content) =>
+                    setTransitionFormData((prev) => ({
+                      ...prev,
+                      comments: content,
+                    }))
+                  }
+                />
+              </FormControl>
+            );
+          }
+
+          // Default text/date input
+          return (
+            <FormControl key={trimmedField} isRequired>
+              <FormLabel>
+                {trimmedField} <span style={{ color: "red" }}>*</span>
+              </FormLabel>
+              <Input
+                type={isDate ? "date" : "text"}
+                placeholder={`Enter ${trimmedField}`}
+                value={transitionFormData[trimmedField] || ""}
+                onChange={(e) =>
+                  setTransitionFormData((prev) => ({
+                    ...prev,
+                    [trimmedField]: e.target.value,
+                  }))
                 }
-              }}
-            >
-              Submit
-            </Button>
+              />
+            </FormControl>
+          );
+        })}
+      </VStack>
+    </ModalBody>
 
-            <Button variant="ghost" onClick={() => {
-              setTransitionFormData({});
-              setIsTransitionPopupOpen(false);
-            }}
-            >
-              Cancel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+    <ModalFooter>
+      <Button
+        colorScheme="blue"
+        mr={3}
+        onClick={async () => {
+          const requiredFields =
+            transitionPopupData?.requiredFields
+              ?.split(",")
+              .map((f) => f.trim()) || [];
+
+          // Validate all required fields filled
+          // const isFormValid = requiredFields.every(
+          //   (field) => transitionFormData[field] && transitionFormData[field].toString().trim() !== ""
+          // );
+          const isFormValid = requiredFields.every((field) => {
+            const camelKey = toCamelCase(field);
+            const val =
+              transitionFormData[camelKey] ?? transitionFormData[field];
+            return val && val.toString().trim() !== "";
+          });
+
+          if (!isFormValid) {
+            toast.error("Please fill all required fields.");
+            return;
+          }
+
+          // Build payload for status transition API
+          const payload = {
+            issueId: id,
+            issueType: issueData.issueType,
+            status: transitionPopupData?.toStatus,
+          };
+
+          requiredFields.forEach((field) => {
+            const camelKey = toCamelCase(field);
+            payload[camelKey] = transitionFormData[field];
+          });
+
+          try {
+            // Submit main transition data
+            const response = await fetch(
+              "http://localhost:8080/api/crDataPush",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to submit the form.");
+            }
+
+            // If comments present, submit comment in separate API call
+            if (transitionFormData.comment) {
+              await axios.post(
+                "http://localhost:8080/api/comments/postCommentByIssueId",
+                {
+                  issueId: id,
+                  comment: transitionFormData.comments,
+                  timestamp: getISTDateTime(),
+                  commentBy: username,
+                }
+              );
+            }
+
+            toast.success("Status Transition Successful!");
+            setTransitionFormData({});
+            setIsTransitionPopupOpen(false);
+            handleStatusChange(transitionPopupData?.toStatus);
+          } catch (error) {
+            toast.error("Error submitting the form.");
+            console.error(error);
+          }
+        }}
+      >
+        Submit
+      </Button>
+
+      <Button
+        variant="ghost"
+        onClick={() => {
+          setTransitionFormData({});
+          setIsTransitionPopupOpen(false);
+        }}
+      >
+        Cancel
+      </Button>
+    </ModalFooter>
+  </ModalContent>
+</Modal>
+
+
 
 
 
