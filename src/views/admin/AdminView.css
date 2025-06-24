@@ -1,0 +1,60 @@
+.custom-quill {
+  border: 1px solid #6b7280 !important;
+  border-radius: 0.375rem !important;
+  color: #1f2937;
+  font-size: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .custom-quill {
+    font-size: 1.25rem;
+  }
+}
+
+.custom-select {
+  /* padding: 10px; */
+  font-size: 14px;
+  background-color: white;
+  border-radius: 8px;
+  color: #333;
+}
+
+.select-control control {
+  /* border-color: borderColor; */
+    background-color: 'white';
+    padding: '10px 12px';
+    border-radius: '8px';
+    font-size: '16px';
+    box-shadow: '0 4px 8px rgba(0, 0, 0, 0.1)';
+    transition: 'border-color 0.2s ease';
+}
+
+.custom-option option {
+  font-size: 14px;
+  background-color: white;
+  border-radius: 8px;
+  color: #333;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.container::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.container {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+}
+
+.custom-quill .ql-editor {
+  font-size: 0.9rem !important;
+}
+
+.custom-quill .ql-editor::placeholder {
+  color: #a0aec0;
+  opacity: 1;
+}

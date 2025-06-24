@@ -26,7 +26,7 @@ const colors = {
     purple: 'rgb(124,34,122)',
     black: 'rgb(0,0,0)',
     charcoal: 'rgb(65,64,66)',
-    gray: 'rgb(119,120,123)',
+    gray: 'rgb(255, 244, 218)',
     lightGray: 'rgb(220,221,222)',
   },
 };

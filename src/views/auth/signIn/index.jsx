@@ -126,9 +126,8 @@ function SignIn() {
         h="100%"
         alignItems="start"
         justifyContent="center"
-        pt="50px"
         mb={{ base: "30px", md: "60px" }}
-        px={{ base: "25px", md: "0px" }}
+        px={{ base: "15px", md: "0px" }}
         mt={{ base: "2px", md: "3vh" }}
         flexDirection="column"
       >
@@ -189,7 +188,7 @@ function SignIn() {
               color={textColor}
               mb="5px"
             >
-              Email<Text color={brandStars}>*</Text>
+              Email<Text color={brandStars} ml="2px">*</Text>
             </FormLabel>
             <Input
               isRequired={true}
@@ -210,7 +209,7 @@ function SignIn() {
               color={textColor}
               display="flex"
             >
-              Password<Text color={brandStars}>*</Text>
+              Password<Text color={brandStars} ml="2px">*</Text>
             </FormLabel>
             <InputGroup size="md">
               <Input

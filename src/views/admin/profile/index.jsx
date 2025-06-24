@@ -1,5 +1,7 @@
 // Chakra imports
-import { Box, Grid, Center, Text } from "@chakra-ui/react";
+import { Box, Grid, Center, Text, Card } from "@chakra-ui/react";
+
+import "../AdminView.css";
 
 // Custom components
 import Banner from "views/admin/profile/components/Banner";
@@ -39,56 +41,74 @@ export default function Overview() {
   }
   return (
 
-    <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
-      {/* Main Fields */}
-      <Grid
-        templateColumns={{
-          base: "1fr", // 1 column on small screens
-          lg: "1.34fr 1fr 1.62fr", // three columns on larger screens
-        }}
-        templateRows={{
-          base: "repeat(3, 1fr)", // 3 rows on small screens
-          lg: "1fr", // 1 row on larger screens
-        }}
-        gap={{ base: "20px", xl: "20px" }}
+    <Card
+      // maxH="430px"
+      // borderRadius="16px"
+      // overflowY="auto"
+      // className="container"
+      mt={{ base: '130px', md: '55px', xl: '55px' }}
+      p={0}
+      position="relative"
+      maxH="430px"
+      // height="100%"
+      borderRadius="16px"
+    >
+      <Box p="30px"
+        // boxShadow="0 8px 24px rgba(201,20,41,0.3)"
+        backgroundColor="white"
+        overflowY="auto"
+        className="container"
       >
-        <Banner
-          gridArea="1 / 1 / 2 / 2"
-          banner={banner}
-          avatar={avatar}
-          name={userResponse.username || "User"}
-          // job="Software Developer"
-          bugCount={userResponse.bugCount}
-          crCount={userResponse.crCount}
-        />
-        <Defect
-          gridArea={{ base: "2 / 1 / 3 / 3", lg: "1 / 2 / 2 / 4" }}
-          minH={{ base: "auto", lg: "180px", "2xl": "300px" }}
-          pe="20px"
-          pb={{ base: "100px", lg: "20px" }}
-        />
-      </Grid>
+        {/* Main Fields */}
+        <Grid
+          templateColumns={{
+            base: "1fr", // 1 column on small screens
+            lg: "1.34fr 1fr 1.62fr", // three columns on larger screens
+          }}
+          templateRows={{
+            base: "repeat(3, 1fr)", // 3 rows on small screens
+            lg: "1fr", // 1 row on larger screens
+          }}
+          gap={{ base: "20px", xl: "20px" }}
+        >
+          <Banner
+            gridArea="1 / 1 / 2 / 2"
+            banner={banner}
+            avatar={avatar}
+            name={userResponse.username || "User"}
+            // job="Software Developer"
+            bugCount={userResponse.bugCount}
+            crCount={userResponse.crCount}
+          />
+          <Defect
+            gridArea={{ base: "2 / 1 / 3 / 3", lg: "1 / 2 / 2 / 4" }}
+            minH={{ base: "auto", lg: "180px", "2xl": "300px" }}
+            pe="20px"
+            pb={{ base: "100px", lg: "20px" }}
+          />
+        </Grid>
 
-      {/* Second Grid for Projects */}
-      <Grid
-        mb="20px"
-        templateColumns={{
-          base: "1fr", // 1 column on small screens
-          lg: "repeat(2, 1fr)", // 2 columns on large screens
-          "2xl": "1fr 1.62fr 1fr", // 3 columns on xl screens
-        }}
-        templateRows={{
-          base: "1fr", // 1 row on small screens
-          lg: "repeat(2, 1fr)", // 2 rows on larger screens
-          "2xl": "1fr", // 1 row on xl screens
-        }}
-        gap={{ base: "20px", xl: "20px" }}
-      >
-        <Projects
-          gridColumn={{ base: "1 / -1", lg: "1 / 3", "2xl": "1 / 4" }} // Span full width on base and larger screens
-        />
-      </Grid>
-    </Box>
+        {/* Second Grid for Projects */}
+        <Grid
+          mb="20px"
+          templateColumns={{
+            base: "1fr", // 1 column on small screens
+            lg: "repeat(2, 1fr)", // 2 columns on large screens
+            "2xl": "1fr 1.62fr 1fr", // 3 columns on xl screens
+          }}
+          templateRows={{
+            base: "1fr", // 1 row on small screens
+            lg: "repeat(2, 1fr)", // 2 rows on larger screens
+            "2xl": "1fr", // 1 row on xl screens
+          }}
+          gap={{ base: "20px", xl: "20px" }}
+        >
+          <Projects
+            gridColumn={{ base: "1 / -1", lg: "1 / 3", "2xl": "1 / 4" }} // Span full width on base and larger screens
+          />
+        </Grid>
+      </Box >
+    </Card>
   );
 
 }

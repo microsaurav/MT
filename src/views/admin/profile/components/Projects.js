@@ -34,7 +34,7 @@ export default function Projects({ gridColumn }) {
   }, []);
 
   return (
-    <Card mb={{ base: "0px", "2xl": "20px" }} gridColumn={gridColumn}>
+    <Card mb={{ base: "0px", "2xl": "20px" }} gridColumn={gridColumn} height="100%">
       <Text
         color={textColorPrimary}
         fontWeight="bold"

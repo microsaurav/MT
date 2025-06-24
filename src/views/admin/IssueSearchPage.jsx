@@ -48,7 +48,7 @@ const IssueSearchPage = () => {
   };
 
   return (
-    <Box pt={{ base: "130px", md: "80px", xl: "80px" }} minHeight="100vh">
+    <Box pt={{ base: '130px', md: '55px', xl: '55px' }} position="relative" maxH="490px">
       <TopFilters filters={filters} setFilters={updateFilters} />
       <IssueTable filters={filters} />
     </Box>

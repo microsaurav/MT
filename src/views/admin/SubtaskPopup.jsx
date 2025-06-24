@@ -13,7 +13,10 @@ const SubtaskPopup = ({ isOpen, onClose, data }) => {
   const [summary, setSummary] = useState("");
   const [assignee, setAssignee] = useState("");
   const masterData = JSON.parse(sessionStorage.getItem("masterData"));
-  const subTaskOptions = masterData?.SubTask || [];
+  const userData = JSON.parse(sessionStorage.getItem("userData"));
+  const username = userData.username
+  const subTaskOptions = masterData?.Subtask || [];
+  console.log("Subtask is",subTaskOptions)
   const toast = useToast();
 
   if (!isOpen) return null;
@@ -22,15 +25,16 @@ const SubtaskPopup = ({ isOpen, onClose, data }) => {
     const payload = {
       projectName: data.projectName,
       parentCR: data.issueId,
-      issueType: issueType,
+      workType: issueType,
       status: "Open",
       summary: summary,
       assignee: assignee,
+      reporter:username,
     };
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/api/PostIssuedetails",
+        "http://localhost:8080/api/subtasks/PostSubtaskDetails",
         payload
       );
       toast({

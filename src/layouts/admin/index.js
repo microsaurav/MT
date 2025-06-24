@@ -108,30 +108,28 @@ export default function Dashboard(props) {
           maxHeight="100vh"
           transition="all 0.2s linear"
           ml={{ base: 0, xl: collapsed ? '80px' : '300px' }}
-          overflowY="hidden"
+          overflowY="auto"
         >
-          <Box position="sticky" top="0" zIndex="sticky" maxW={{ base: 0, xl: collapsed ? '80px' : '400px' }}>
-            <Portal>
-              <Navbar
-                collapsed={collapsed}
-                onOpen={onOpen}
-                logoText={'Horizon UI Dashboard PRO'}
-                brandText={getActiveRoute(routes)}
-                secondary={getActiveNavbar(routes)}
-                message={getActiveNavbarText(routes)}
-                fixed={fixed}
-                {...rest}
-              />
-            </Portal>
-          </Box>
-          <Box flex="1" height="100%">
+          <Portal>
+            <Navbar
+              collapsed={collapsed}
+              onOpen={onOpen}
+              logoText={'Horizon UI Dashboard PRO'}
+              brandText={getActiveRoute(routes)}
+              secondary={getActiveNavbar(routes)}
+              message={getActiveNavbarText(routes)}
+              fixed={fixed}
+              {...rest}
+            />
+          </Portal>
+          <Box flex="1" height="auto">
             {getRoute() && (
               <Box
                 mx="auto"
-                p={{ base: '20px', md: '30px' }}
-                pe="20px"
-                height="100%"
-                pt="40px"
+                pt={{ base: '20px', md: '35px' }}
+                px={{ base: '15px', md: '20px' }}
+                // pe="20px"
+                height={{base: 'auto', xs: '100vh'}}
               >
                 <Routes>
                   {getRoutes(routes)}

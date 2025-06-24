@@ -42,6 +42,7 @@ export function SidebarLinks(props) {
               pb='12px'
               key={index}
               display={collapsed ? "none" : "block"}
+              transition="opacity .3s ease-n-out, visibility .3s ease-in-out"
             >
               {route.name}
             </Text>
@@ -57,50 +58,60 @@ export function SidebarLinks(props) {
           <NavLink key={index} to={route.layout + route.path}>
             {route.icon ? (
               <Box>
-                <HStack
-                  spacing={
-                    activeRoute(route.path.toLowerCase()) ? "22px" : "26px"
-                  }
-                  py='5px'
-                  ps='10px'>
-                  <Flex w='100%' alignItems='center' justifyContent='center'>
-                    <Box
+              <HStack
+                spacing={
+                  activeRoute(route.path.toLowerCase()) ? "22px" : "26px"
+                }
+                py='5px'
+                ps='10px'
+                transition="background-color .3s ease-in-out, color .3s ease-in-out"
+                _hover={{
+                  backgroundColor: useColorModeValue("gray.100", "gray.600"),
+                  color: useColorModeValue("gray.900", "white"),
+                }}
+              >
+                <Flex w='100%' alignItems='center' justifyContent='center'>
+                  <Box
+                    color={
+                      activeRoute(route.path.toLowerCase())
+                        ? activeIcon
+                        : textColor
+                    }
+                    me='18px'
+                    transition="color .3s ease-in-out"
+                  >
+                    {route.icon}
+                  </Box>
+                  {!collapsed && (
+                    <Text
+                      me='auto'
                       color={
                         activeRoute(route.path.toLowerCase())
-                          ? activeIcon
+                          ? activeColor
                           : textColor
                       }
-                      me='18px'>
-                      {route.icon}
-                    </Box>
-                    {!collapsed && (
-                      <Text
-                        me='auto'
-                        color={
-                          activeRoute(route.path.toLowerCase())
-                            ? activeColor
-                            : textColor
-                        }
-                        fontWeight={
-                          activeRoute(route.path.toLowerCase())
-                            ? "bold"
-                            : "normal"
-                        }>
-                        {route.name}
-                      </Text>
-                    )}
-                  </Flex>
-                  <Box
-                    h='36px'
-                    w='4px'
-                    bg={
-                      activeRoute(route.path.toLowerCase())
-                        ? brandColor
-                        : "transparent"
-                    }
-                    borderRadius='5px'
-                  />
-                </HStack>
+                      fontWeight={
+                        activeRoute(route.path.toLowerCase())
+                          ? "bold"
+                          : "normal"
+                      }
+                      transition="opacity .3s ease-n-out, visibility .3s ease-in-out"
+                    >
+                      {route.name}
+                    </Text>
+                  )}
+                </Flex>
+                <Box
+                  h='36px'
+                  w='4px'
+                  bg={
+                    activeRoute(route.path.toLowerCase())
+                      ? brandColor
+                      : "transparent"
+                  }
+                  borderRadius='5px'
+                />
+              </HStack>
               </Box>
             ) : (
               <Box>

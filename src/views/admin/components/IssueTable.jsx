@@ -14,6 +14,7 @@ import {
   Text,
   Center,
   useColorModeValue,
+  Card,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -91,21 +92,21 @@ const IssueTable = ({ filters }) => {
     );
 
   return (
-    <Box p={4} bg={bg} shadow="md" borderRadius="lg" overflow="hidden">
+    <Card py={2} px={2} bg={bg} shadow="md" maxH="350px" borderRadius="lg" overflow="hidden">
       <Box overflow="auto" maxH="70vh">
         <Table variant="striped" size="sm" minW="1500px" color={textColor}>
           <Thead position="sticky" top={0} bg={headerBg} zIndex={0.5}>
             <Tr>
               {[
-                "Issue ID", "Type", "Status", "Priority", "Workstream", "Defect Type",
+                "Issue ID", "CR Name", "Project Name", "Type", "Status", "Priority", "Assignee", "Defect Type",
                 "Product Type", "Primary App", "Summary", "Description", "Linked Issue",
-                "Severity", "Environment", "Impacted Systems", "Module", "Assignee",
-                "Steps", "Actual Output", "Expected Output", "#TC Impacted", "CR Name",
+                "Severity", "Environment", "Impacted Systems", "Module",
+                "Steps", "Actual Output", "Expected Output", "#TC Impacted",
                 "Business Owner", "In Scope", "Out Scope", "Need", "Benefits",
-                "Child CR Reason", "Parent CR", "Project Name", "BIU Dashboard",
+                "Child CR Reason", "Parent CR", "BIU Dashboard",
                 "Attachment", "GTM Plan", "Justification",
               ].map((label, i) => (
-                <Th key={i} whiteSpace="nowrap" color={textColor}>
+                <Th key={i} whiteSpace="nowrap" color={textColor} px="8px" justifyItems="center">
                   {label}
                 </Th>
               ))}
@@ -168,7 +169,7 @@ const IssueTable = ({ filters }) => {
         </Table>
       </Box>
 
-      <Flex justify="space-between" align="center" mt={4} flexWrap="wrap">
+      <Flex justify="space-between" align="center" mt={2} flexWrap="wrap">
         <Text fontSize="sm" color={subTextColor}>
           Showing {ITEMS_PER_PAGE * (page - 1) + 1} -{" "}
           {Math.min(page * ITEMS_PER_PAGE, issues.length)} of {issues.length}
@@ -186,7 +187,7 @@ const IssueTable = ({ filters }) => {
           </Button>
         </ButtonGroup>
       </Flex>
-    </Box>
+    </Card>
   );
 };
 

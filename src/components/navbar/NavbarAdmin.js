@@ -54,11 +54,11 @@ export default function AdminNavbar(props) {
 			borderRadius='16px'
 			borderWidth='1.5px'
 			borderStyle='solid'
-			transition=".2s linear"
-			transitionDelay='0s, 0s, 0s, 0s'
-			transitionDuration=".2s, .2s, .35s"
-			transitionProperty="top, bottom, width, margin" // update: added margin
-			transitionTimingFunction="linear, linear, ease"
+			transition=" all .2s linear"
+			// transitionDelay='0s, 0s, 0s, 0s'
+			// transitionDuration=".2s, .2s, .35s"
+			// transitionProperty="top, bottom, width, margin" // update: added margin
+			// transitionTimingFunction="linear, linear, ease"
 			alignItems={{ xl: 'center' }}
 			display={secondary ? 'block' : 'flex'}
 			minH='75px'

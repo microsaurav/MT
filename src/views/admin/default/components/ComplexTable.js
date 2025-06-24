@@ -301,13 +301,13 @@ export default function ComplexTable() {
       px="0px"
       overflowX={{ sm: 'scroll', lg: 'hidden' }}
     >
-      <Flex px="25px" mb="8px" justifyContent="space-between" align="center">
+      <Flex px="25px" justifyContent="space-between" align="center">
         <Text color={textColor} fontSize="22px" fontWeight="700">
           CR's as per team
         </Text>
       </Flex>
       <Box>
-        <Table variant="simple" color="gray.500" mb="24px" mt="12px">
+        <Table variant="simple" color="gray.500" mb="12px" mt="12px">
           <Thead>
             {table.getHeaderGroups().map(headerGroup => (
               <Tr key={headerGroup.id}>

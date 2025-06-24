@@ -12,6 +12,23 @@ export const globalStyles = {
       800: "#190793",
       900: "#11047A",
     },
+    primary: {
+      lightCream: 'rgb(255,244,218)', // light cream
+      white: 'rgb(255,255,255)', // white
+      red: 'rgb(201,20,41)',   // primary red
+      darkRed: 'rgb(141,18,24)',   // dark red
+    },
+    secondary: {
+      gold: 'rgb(255,215,80)',
+      orange: 'rgb(247,116,00)',
+      greenLight: 'rgb(189,215,83)',
+      green: 'rgb(115,185,100)',
+      purple: 'rgb(124,34,122)',
+      black: 'rgb(0,0,0)',
+      charcoal: 'rgb(65,64,66)',
+      gray: 'rgb(255, 244, 218)',
+      lightGray: 'rgb(220,221,222)',
+    },
     brandScheme: {
       100: "#E9E3FF",
       200: "#7551FF",
@@ -93,5 +110,12 @@ export const globalStyles = {
         fontFamily: "DM Sans",
       },
     }),
+  },
+  components: {
+    EditablePreview: {
+      baseStyle: {
+        padding: 0,
+      },
+    },
   },
 };

@@ -53,30 +53,35 @@ function Sidebar(props) {
     setCollapsed && setCollapsed(true);
   }
 
-  // SIDEBAR
-  return (
-    // Update: Setting size of sidebar
-    <Box
-      display={{ sm: "none", xl: "block" }}
-      w={collapsed ? "80px" : "300px"}
-      position="fixed"
-      minH="100%"
-      top="60px"
-      height="calc(100vh - 60px)"
-      onMouseEnter={handleSidebarMouseEnter} // Update: show sidebar on mouse enter
-      onMouseLeave={handleSidebarMouseLeave} // Update: hide sidebar on mouse leave
-      zIndex="999"
-    >
+    // SIDEBAR
+    return (
+      // Update: Setting size of sidebar
       <Box
-        bg={sidebarBg}
-        transition={variantChange}
+        display={{ sm: "none", xl: "block" }}
         w={collapsed ? "80px" : "300px"}
-        h="100vh"
-        m={sidebarMargins}
+        position="fixed"
         minH="100%"
-        overflowX="hidden"
-        boxShadow={shadow}
+        top="60px"
+        height="calc(100vh - 60px)"
+        transition="width 0.5s ease, box-shadow 0.3s ease, background-color 0.3s ease"
+        _hover={{
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
+          backgroundColor: useColorModeValue("gray.50", "gray.700"),
+        }}
+        onMouseEnter={handleSidebarMouseEnter} // Update: show sidebar on mouse enter
+        onMouseLeave={handleSidebarMouseLeave} // Update: hide sidebar on mouse leave
+        zIndex="999"
       >
+        <Box
+          bg={sidebarBg}
+          transition={variantChange}
+          w={collapsed ? "80px" : "300px"}
+          h="100vh"
+          m={sidebarMargins}
+          minH="100%"
+          overflowX="hidden"
+          boxShadow={shadow}
+        >
         <Scrollbars
           autoHide
           renderTrackVertical={renderTrack}

@@ -1,6 +1,7 @@
 import {
   Avatar,
   Box,
+  Card,
   Flex,
   FormLabel,
   Icon,
@@ -29,9 +30,10 @@ import DailyTraffic from "views/admin/default/components/DailyTraffic";
 import PieCard from "views/admin/default/components/PieCard";
 import PieCardWorkstream from "views/admin/default/components/PieCardWorkstream";
 import { AiOutlineFileDone } from "react-icons/ai";
-import { useState,useEffect
- } from "react";
- import axios from "axios";
+import {
+  useState, useEffect
+} from "react";
+import axios from "axios";
 import Tasks from "views/admin/default/components/Tasks";
 import TotalSpent from "views/admin/default/components/TotalSpent";
 import ProdDefects from "views/admin/default/components/ProdDefects";
@@ -71,62 +73,81 @@ export default function UserReports() {
   };
 
   return (
-    <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
-     <SimpleGrid columns={{ base: 1, md: 2, lg: 3, '2xl': 6 }} gap="20px" mb="20px">
-        {stats.map((item, index) => {
-          const IconComponent = iconMap[item.category] || MdBarChart; // Default to MdBarChart if category not found
-          const handleClick = () => {
-            // Navigate to /admin/search with query param
-            navigate(`/admin/search?status=${encodeURIComponent(item.category)}`);
-          };
-          return (
-            <Box key={index} cursor="pointer" onClick={handleClick}>
-<MiniStatistics
-            // onClick={handleClick}
-              key={index}
-              startContent={
-                <IconBox
-                  w="56px"
-                  h="56px"
-                  bg={boxBg}
-                  icon={<Icon w="32px" h="32px" as={IconComponent} color={brandColor} />}
-                />
-              }
-              name={item.category}
-              value={item.count.toString()}
+    <Card
+      // maxH="410px"
+      // overflowY="auto"
+      // className="container"
+      // borderRadius="16px"
+      // bg="none"
+      mt={{ base: '130px', md: '55px', xl: '55px' }}
+      p={0}
+      position="relative"
+      maxH="430px"
+      borderRadius="16px"
+    >
+      <Box
+        // pt={{ base: '130px', md: '55px', xl: '55px' }} position="relative"
+        overflowY="auto"
+        className="container"
+      >
+        <Box m={{ base: '10px', lg: '15px' }}>
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 3, '2xl': 6 }} gap="20px" mb="20px">
+            {stats.map((item, index) => {
+              const IconComponent = iconMap[item.category] || MdBarChart; // Default to MdBarChart if category not found
+              const handleClick = () => {
+                // Navigate to /admin/search with query param
+                navigate(`/admin/search?status=${encodeURIComponent(item.category)}`);
+              };
+              return (
+                <Box key={index} cursor="pointer" onClick={handleClick}>
+                  <MiniStatistics
+                    // onClick={handleClick}
+                    key={index}
+                    startContent={
+                      <IconBox
+                        w="56px"
+                        h="56px"
+                        bg={boxBg}
+                        icon={<Icon w="32px" h="32px" as={IconComponent} color={brandColor} />}
+                      />
+                    }
+                    name={item.category}
+                    value={item.count.toString()}
+                  />
+                </Box>
+
+              );
+            })}
+          </SimpleGrid>
+          <SimpleGrid
+            columns={{ base: 1, md: 1, xl: 2 }}
+            gap="20px"
+            mb="20px">
+            {/* First PieCard */}
+            <PieCard
+              colSpan={{ base: 1, md: 2 }}
+              h={{ base: "300px", md: "400px", xl: "500px" }}
+
             />
-            </Box>
-            
-          );
-        })}
-      </SimpleGrid>
-    <SimpleGrid 
-  columns={{ base: 1, md: 1, xl: 2 }} 
-  gap="20px" 
-  mb="20px">
-  {/* First PieCard */}
-  <PieCard 
-    colSpan={{ base: 1, md: 2 }} 
-    h={{ base: "300px", md: "400px", xl: "500px" }}  
 
-  />
-  
-  {/* Second PieCard */}
-  <PieCardWorkstream
-    colSpan={{ base: 1, md: 2 }} 
-    h={{ base: "300px", md: "400px", xl: "500px" }} 
-   
-  />
-</SimpleGrid>
+            {/* Second PieCard */}
+            <PieCardWorkstream
+              colSpan={{ base: 1, md: 2 }}
+              h={{ base: "300px", md: "400px", xl: "500px" }}
+
+            />
+          </SimpleGrid>
 
 
-      <SimpleGrid columns={{ base: 1, md: 1, xl: 2 }} gap='20px' mb='20px'>
-        <ComplexTable
-          // columnsData={columnsDataComplex}
-          // tableData={tableDataComplex}
-        />
-        {/* <MiniCalendar h='70%' minW='50%' selectRange={false} /> */}
-      </SimpleGrid>
-    </Box>
+          <SimpleGrid columns={{ base: 1, md: 1, xl: 2 }} gap='20px' mb='20px'>
+            <ComplexTable
+            // columnsData={columnsDataComplex}
+            // tableData={tableDataComplex}
+            />
+            {/* <MiniCalendar h='70%' minW='50%' selectRange={false} /> */}
+          </SimpleGrid>
+        </Box>
+      </Box>
+    </Card>
   );
 }
