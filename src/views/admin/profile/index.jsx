@@ -46,7 +46,7 @@ export default function Overview() {
       // borderRadius="16px"
       // overflowY="auto"
       // className="container"
-      mt={{ base: '130px', md: '55px', xl: '55px' }}
+      mt={{ base: '130px', md: '15px', xl: '15px' }}
       p={0}
       position="relative"
       maxH="430px"

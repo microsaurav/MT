@@ -98,7 +98,7 @@ export default function Dashboard(props) {
           routes={routes}
           collapsed={collapsed}
           setCollapsed={setCollapsed}
-          pt="80px"
+          pt="90px"
           zIndex="sticky"
           {...rest}
         />

@@ -54,6 +54,7 @@ export default function HeaderLinks(props) {
   return (
     <Flex
       w={{ sm: '100%', md: 'auto' }}
+      my="auto"
       alignItems="center"
       flexDirection="row"
       bg={menuBg}

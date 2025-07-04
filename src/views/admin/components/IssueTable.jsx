@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Table,
@@ -14,6 +14,7 @@ import {
   Text,
   Center,
   useColorModeValue,
+  useBreakpointValue,
   Card,
 } from "@chakra-ui/react";
 import axios from "axios";
@@ -27,6 +28,7 @@ const IssueTable = ({ filters }) => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,53 +37,90 @@ const IssueTable = ({ filters }) => {
   const headerBg = useColorModeValue("gray.100", "gray.800");
   const textColor = useColorModeValue("gray.800", "gray.100");
   const subTextColor = useColorModeValue("gray.600", "gray.400");
+  const isMobile = useBreakpointValue({ base: true, md: false });
 
-  const [activeFilters, setActiveFilters] = useState({});
+  const severityStyles = {
+    Blocker: { bg: "red.900", color: "white" },
+    Critical: { bg: "red.600", color: "white" },
+    High: { bg: "red.200", color: "black" },
+    Medium: { bg: "yellow.300", color: "black" },
+    Low: { bg: "green.300", color: "black" },
+  };
 
-  // Parse all query params into filters
+  const priorityStyles = {
+    Low: { bg: "green.300", color: "black" },
+    Medium: { bg: "yellow.300", color: "black" },
+    High: { bg: "red.500", color: "white" },
+    Regulatory: { bg: "blue.400", color: "white" },
+    "Rush Order": { bg: "red.900", color: "white" },
+  };
+
+  const columns = [
+    { label: "CR Title / ID", width: "100px", key: "issueId" },
+    { label: "Work Type", width: "85px", key: "issueType" },
+    ...(isMobile ? [] : [
+      { label: "Application Name", width: "120px", key: "primaryApplication" },
+      { label: "Status", width: "90px", key: "status" },
+      { label: "Priority", width: "100px", key: "priority" },
+      { label: "Created Date", width: "100px", key: "createdDate" },
+      { label: "Assignee", width: "95px", key: "assignee" },
+      { label: "Business Module", width: "120px", key: "businessModule" },
+      { label: "Business Type", width: "120px", key: "businessType" },
+    ]),
+    ...(filters.issueType === "Defect"
+      ? [{ label: "Severity", width: "100px", key: "severity" }]
+      : []),
+  ];
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const newFilters = {};
     for (const [key, value] of params.entries()) {
       newFilters[key] = value;
     }
-    setActiveFilters(newFilters);
+    // setActiveFilters(newFilters);
     setPage(1);
-  }, [location.search]);
+    fetchIssues(newFilters);
+  }, [location.search, filters.triggerSearch]);
 
-  useEffect(() => {
-    const fetchIssues = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-        for (const key in activeFilters) {
-          if (activeFilters[key]) {
-            params.append(key, activeFilters[key]);
-          }
+  const fetchIssues = async (activeFilters) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      for (const key in activeFilters) {
+        if (activeFilters[key]) {
+          params.append(key, activeFilters[key]);
         }
-
-        let response;
-        if (params.toString()) {
-          response = await axios.get(`http://localhost:8080/api/tasks?${params}`);
-        } else {
-          response = await axios.get("http://localhost:8080/api/GetIssuedetails");
-        }
-
-        setIssues(response.data || []);
-        setError("");
-      } catch (err) {
-        console.error("Failed to fetch issues:", err);
-        setError("Unable to fetch issue details.");
-      } finally {
-        setLoading(false);
       }
-    };
 
-    fetchIssues();
-  }, [activeFilters, filters.triggerSearch]);
+      const url = params.toString()
+        ? `http://localhost:8080/api/tasks?${params}`
+        : "http://localhost:8080/api/GetIssuedetails";
 
-  const totalPages = Math.ceil(issues.length / ITEMS_PER_PAGE);
-  const paginatedData = issues.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+      const response = await axios.get(url);
+      setIssues(response.data || []);
+      setError("");
+    } catch (err) {
+      console.error("Failed to fetch issues:", err);
+      setError("Unable to fetch issue details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sortedData = useMemo(() => {
+    if (!sortConfig.key) return issues;
+    return [...issues].sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [issues, sortConfig]);
+
+  const paginatedData = sortedData.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
 
   if (loading) return <Loading />;
   if (error)
@@ -92,77 +131,72 @@ const IssueTable = ({ filters }) => {
     );
 
   return (
-    <Card py={2} px={2} bg={bg} shadow="md" maxH="350px" borderRadius="lg" overflow="hidden">
-      <Box overflow="auto" maxH="70vh">
-        <Table variant="striped" size="sm" minW="1500px" color={textColor}>
+    <Card p={2} bg={bg} shadow="md" borderRadius="lg" h="100%" overflow="hidden">
+      <Box overflow="auto" maxH="100%">
+        <Table variant="striped" size="sm" minW="700px" color={textColor}>
           <Thead position="sticky" top={0} bg={headerBg} zIndex={0.5}>
             <Tr>
-              {[
-                "Issue ID", "CR Name", "Project Name", "Type", "Status", "Priority", "Assignee", "Defect Type",
-                "Product Type", "Primary App", "Summary", "Description", "Linked Issue",
-                "Severity", "Environment", "Impacted Systems", "Module",
-                "Steps", "Actual Output", "Expected Output", "#TC Impacted",
-                "Business Owner", "In Scope", "Out Scope", "Need", "Benefits",
-                "Child CR Reason", "Parent CR", "BIU Dashboard",
-                "Attachment", "GTM Plan", "Justification",
-              ].map((label, i) => (
-                <Th key={i} whiteSpace="nowrap" color={textColor} px="8px" justifyItems="center">
-                  {label}
+              {columns.map(({ label, width, key }, i) => (
+                <Th
+                  whiteSpace="nowrap"
+                  key={i}
+                  color={textColor}
+                  px="5px"
+                  w={width}
+                  cursor="pointer"
+                  onClick={() => {
+                    const direction =
+                      sortConfig.key === key && sortConfig.direction === "asc"
+                        ? "desc"
+                        : "asc";
+                    setSortConfig({ key, direction });
+                  }}
+                >
+                  {label} {sortConfig.key === key ? (sortConfig.direction === "asc" ? "↑" : "↓") : ""}
                 </Th>
               ))}
             </Tr>
           </Thead>
           <Tbody>
             {paginatedData.map((issue, i) => (
-              <Tr key={issue.issueId || i}>
-                <Td>
-                  <Text
-                    color="blue.500"
-                    cursor="pointer"
-                    _hover={{ textDecoration: "underline" }}
-                    onClick={() => navigate(`/admin/view/${issue.issueId}`)}
-                  >
-                    {issue.issueId}
-                  </Text>
-                </Td>
-                <Td>{issue.issueType}</Td>
-                <Td>
-                  <Badge colorScheme={issue.status === "Open" ? "blue" : "green"}>
-                    {issue.status}
-                  </Badge>
-                </Td>
-                <Td>
-                  <Badge colorScheme="red">{issue.priority}</Badge>
-                </Td>
-                <Td>{issue.workstreamStreamAndBusinessFunction}</Td>
-                <Td>{issue.defectType || "-"}</Td>
-                <Td>{issue.productType || "-"}</Td>
-                <Td>{issue.primaryApplication || "-"}</Td>
-                <Td>{issue.summary}</Td>
-                <Td>{issue.description}</Td>
-                <Td>{issue.linkedIssue || "-"}</Td>
-                <Td>{issue.severity || "-"}</Td>
-                <Td>{issue.environment || "-"}</Td>
-                <Td>{issue.impactedSystems || "-"}</Td>
-                <Td>{issue.module}</Td>
-                <Td>{issue.assignee}</Td>
-                <Td>{issue.stepsToReproduce || "-"}</Td>
-                <Td>{issue.actualOutput || "-"}</Td>
-                <Td>{issue.expectedOutput || "-"}</Td>
-                <Td>{issue.noOfTestCaseImpacted || "-"}</Td>
-                <Td>{issue.crName}</Td>
-                <Td>{issue.businessOwner}</Td>
-                <Td>{issue.inScope}</Td>
-                <Td>{issue.outScope}</Td>
-                <Td>{issue.businessNeed}</Td>
-                <Td>{issue.businessNeedBenefitsDetails}</Td>
-                <Td>{issue.reasonForRaisingChildCR || "-"}</Td>
-                <Td>{issue.parentCR || "-"}</Td>
-                <Td>{issue.projectName}</Td>
-                <Td>{issue.biudashboardNeeded ? "Yes" : "No"}</Td>
-                <Td>{issue.attachment || "-"}</Td>
-                <Td>{issue.gtmplanNeeded ? "Yes" : "No"}</Td>
-                <Td>{issue.justification}</Td>
+              <Tr key={issue.issueId || i} sx={{
+                '& > td': {
+                  // borderBottom: "1px solid gray",
+                }
+              }}>
+                {columns.map(({ key, width }, j) => (
+                  <Td key={j} p="5px" w={width}>
+                    {key === "issueId" ? (
+                      <Text
+                        p="5px"
+                        color="blue.500"
+                        cursor="pointer"
+                        _hover={{ textDecoration: "underline" }}
+                        onClick={() => navigate(`/admin/view/${issue.issueId}`)}
+                      >
+                        {issue[key]}
+                      </Text>
+                    ) : key === "priority" ? (
+                      <Badge
+                        bg={priorityStyles[issue[key]]?.bg || "gray.200"}
+                        color={priorityStyles[issue[key]]?.color || "black"}
+                      >
+                        {issue[key]}
+                      </Badge>
+                    ) : key === "severity" ? (
+                      <Badge
+                        bg={severityStyles[issue[key]]?.bg}
+                        color={severityStyles[issue[key]]?.color || "black"}
+                      >
+                        {issue[key]}
+                      </Badge>
+                    ) : key === "createdDate" ? (
+                      issue[key] ? new Date(issue[key]).toLocaleDateString('en-GB') : ''
+                    ) : (
+                      issue[key]
+                    )}
+                  </Td>
+                ))}
               </Tr>
             ))}
           </Tbody>
@@ -172,7 +206,7 @@ const IssueTable = ({ filters }) => {
       <Flex justify="space-between" align="center" mt={2} flexWrap="wrap">
         <Text fontSize="sm" color={subTextColor}>
           Showing {ITEMS_PER_PAGE * (page - 1) + 1} -{" "}
-          {Math.min(page * ITEMS_PER_PAGE, issues.length)} of {issues.length}
+          {Math.min(page * ITEMS_PER_PAGE, sortedData.length)} of {sortedData.length}
         </Text>
         <ButtonGroup size="sm" isAttached>
           <Button onClick={() => setPage(Math.max(1, page - 1))} isDisabled={page === 1}>

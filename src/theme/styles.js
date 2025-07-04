@@ -17,8 +17,6 @@ export const globalStyles = {
       white: 'rgb(255,255,255)', // white
       red: 'rgb(201,20,41)',   // primary red
       darkRed: 'rgb(141,18,24)',   // dark red
-    },
-    secondary: {
       gold: 'rgb(255,215,80)',
       orange: 'rgb(247,116,00)',
       greenLight: 'rgb(189,215,83)',

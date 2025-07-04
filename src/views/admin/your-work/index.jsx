@@ -61,7 +61,10 @@ import {
   IconButton,
   List,
   ListItem,
-  GridItem
+  GridItem,
+  Badge,
+  Heading,
+  Grid
 } from "@chakra-ui/react";
 import {
   LuCalendarClock,
@@ -75,7 +78,8 @@ import {
   LuFile,
   LuDownload,
   LuTrash,
-  LuCheckCheck
+  LuCheckCheck,
+  LuTimer
 } from "react-icons/lu";
 import '../AdminView.css'
 import { FaBug, FaUserCircle, FaArrowUp } from "react-icons/fa"; // ✅ Added missing icons
@@ -95,6 +99,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import the default styles
 import BeatLoader from 'components/beatloader/BeatLoader';
 import { GrResources } from 'react-icons/gr';
+import { HSeparator } from 'components/separator/Separator';
 
 export default function Overview() {
 
@@ -327,7 +332,17 @@ export default function Overview() {
     setLoading(true)
     try {
       const response = await axios.get(`http://localhost:8080/api/comments/getCommentByIssueId/${id}`);
-      const formatted = response.data.map((c) => ({
+      let data = response.data;
+
+      if (!Array.isArray(data)) {
+        if (data.comments && Array.isArray(data.comments)) {
+          data = data.comments;
+        } else {
+          data = [data];
+        }
+      }
+
+      const formatted = data.map((c) => ({
         commentId: c.commentId,
         issueId: c.issueId,
         author: c.commentBy,
@@ -462,7 +477,6 @@ export default function Overview() {
       setLoading(false);
     }
   };
-
 
   const items = [
     { title: "Details", text: "Choose an option below" },
@@ -681,6 +695,7 @@ export default function Overview() {
     axios
       .get(`http://localhost:8080/api/fetch/${id}`)
       .then((response) => {
+        console.log("API response data:", response.data);
         setIssueData(response.data);
         setStatus(response.data.status || "Open");
 
@@ -691,6 +706,8 @@ export default function Overview() {
             "Steps to Reproduce": response.data.stepsToReproduce || "NA",
             "Expected Output": response.data.expectedOutput || "NA",
             "Actual Output": response.data.actualOutput || "NA",
+            "Severity": response.data.severity || "",
+            "Priority": response.data.priority || "",
           };
         } else {
           initialFields = {
@@ -698,7 +715,9 @@ export default function Overview() {
             // "In Scope": response.data.inScope || "NA",
             // "Out Scope": response.data.outScope || "NA",
             "Qualitative Benefits": response.data.qualitativeBenefits || "NA",
-            "Quantitaitve Benefits": response.data.quantitativeBenefits || "NA",
+            "Quantitative Benefits": response.data.quantitativeBenefits || "NA",
+            "Severity": response.data.severity || "",
+            "Priority": response.data.priority || "",
           };
         }
         setAccordionFields({
@@ -742,6 +761,7 @@ export default function Overview() {
     }
   };
   const getFileType = (filename) => {
+    if (!filename || typeof filename !== 'string') return "";
     const parts = filename.split(".");
     return parts.length > 1 ? parts.pop().toLowerCase() : "";
   };
@@ -804,7 +824,16 @@ export default function Overview() {
     setLoading(true);
     try {
       const response = await axios.get(`http://localhost:8080/api/getDocumentsByIssueId/${id}`);
-      const data = response.data;
+      let data = response.data;
+
+      // If data is not an array, try to extract array from a property or wrap in array
+      if (!Array.isArray(data)) {
+        if (data.attachments && Array.isArray(data.attachments)) {
+          data = data.attachments;
+        } else {
+          data = [data];
+        }
+      }
 
       const formatted = data.map((c) => ({
         id: c.attachmentId,
@@ -908,1093 +937,881 @@ export default function Overview() {
         break;
     }
   };
-
-
   return (
-    <Card mt={{ base: "130px", md: "55px", xl: "55px" }}
-      borderRadius="md" maxH="430px" position="relative" overflowY="scroll" px={4} className="container">
-      <Box flexDirection="column" display="flex" gap={4}>
-        <Popup isOpen={isPopupOpen} data={message} onClose={handleClosePopup} />
-        <SubtaskPopup isOpen={isSubtaskPopupOpen} onClose={handleSubtaskClosePopup} data={issueData} />
-        <div style={{ display: "flex", width: "100%", height: "600px" }}>
-
-          {/* Left Section (70%) */}
-          <div style={{ flex: 7.5, height: "100%" }}>
-            <div>
-              <div style={{ fontSize: "22px", fontWeight: 500, marginTop: "10px" }}>
-                {issueData ? issueData.summary : <BeatLoader />}
-              </div>
-              <div>
-                <Menu>
-                  <MenuButton as={Button} variant="outline" size="sm">
-                    + Add
-                  </MenuButton>
-                  <Portal>
-                    <MenuList fontSize={"14px"}>
-                      {/* <MenuItem>Attachment</MenuItem> */}
-                      <MenuItem
-                        onClick={() => {
-                          const fileInput = document.createElement('input');
-                          fileInput.type = 'file';
-                          fileInput.multiple = true;
-                          fileInput.style.display = 'none';
-                          document.body.appendChild(fileInput);
-                          fileInput.click();
-
-                          fileInput.addEventListener('change', async (event) => {
-                            if (event.target.files.length > 0) {
-                              try {
-                                handleFileChange(event);
-                                await handleUpload();
-                              } catch (error) {
-                                console.error('Error uploading files:', error);
-                              }
-                            }
-                            document.body.removeChild(fileInput);
-                          });
-                        }}
-                      >
-                        Attachment
-                      </MenuItem>
-                      <MenuItem onClick={() => {
-                        handleSubtaskOpenPopup();
-                      }}>Subtask</MenuItem>
-                      {/* <MenuItem onClick={addRowLinkIssue}>Linked Issue</MenuItem> */}
-                      {/* <MenuItem>Web Link</MenuItem> */}
-                    </MenuList>
-                  </Portal>
-                </Menu>
-              </div>
-
-              {/* Editable Sections */}
-              <div style={{ margin: "5px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                {issueData.issueType === "Defect" ? (
-                  ["Description", "Steps to Reproduce", "Expected Output", "Actual Output"].map((label, index) => (
-                    <div key={index} style={{ margin: "5px" }}>
-                      <label style={{ fontSize: "16px", fontWeight: 500 }}>{label}</label>
-                      <div>
-                        <Editable
-                          fontSize="14px"
-                          textAlign="start"
-                          value={editableFields[label] || ""}
-                          onSubmit={(val) => handleFieldChange(label, val)} // Use onSubmit instead of onChange
-                          onChange={(val) =>
-                            setEditableFields((prev) => ({
-                              ...prev,
-                              [label]: val,
-                            }))
-                          }
+    <Card mt={{ base: "130px", md: "15px", xl: "15px" }}
+      maxH="470px" position="relative" overflowY="scroll" bg="transparent" className="container" border="none" boxShadow="none">
+      <Card bg="transparent" className='overview-card'>
+        <Text fontSize="15px" fontWeight="500">Activity</Text>
+        <Box m={0} w="100%" mt={2}>
+          <Tabs index={tabIndex} onChange={(index, event) => handleTabChange(index, event)} variant="unstyled" defaultIndex={0} w="100%">
+            <TabList border="1px solid #dfe1e6" borderRadius="6px" bg="white" mb={2} pb={0}>
+              {[
+                { label: "Overview", icon: LuUser },
+                { label: "Link Issues", icon: LuFolder },
+                {
+                  label: (
+                    <>
+                      Attachments{" "}
+                      {attachments.length > 0 && (
+                        <Box
+                          borderRadius="full"
+                          bg="#E5E7EB"
+                          color="#4A5568"
+                          fontSize="xs"
+                          fontWeight="medium"
+                          px={2}
+                          py={0.5}
+                          ml={1}
                         >
-                          <EditablePreview />
-                          <EditableInput />
-                        </Editable>
-                      </div>
-                    </div>
-                  ))
-
-                ) : (
-
-                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} width="100%">
-                    {/* Description spans full width on md+ screens */}
-                    <GridItem colSpan={{ base: 1, md: 2 }}>
-                      <Box>
-                        <FormLabel sx={labelStyle} m={0}>Description</FormLabel>
-                        <Editable
-                          textAlign="start"
-                          value={editableFields["Description"] || ""}
-                          onSubmit={(val) => handleFieldChange("Description", val)}
-                          onChange={(val) =>
-                            setEditableFields((prev) => ({
-                              ...prev,
-                              ["Description"]: val,
-                            }))
-                          }
-                        >
-                          <EditablePreview sx={{ padding: 0 }} />
-                          <EditableInput />
-                        </Editable>
-                      </Box>
-                    </GridItem>
-                    {["Quantitative Benefits", "Qualitative Benefits"].map((label) => (
-                      <GridItem key={label}>
-                        <Box>
-                          <FormLabel sx={labelStyle} m={0}>{label}</FormLabel>
-                          <Editable p={0}
+                          {attachments.length}
+                        </Box>
+                      )}
+                    </>
+                  ),
+                  icon: LuPaperclip,
+                },
+                { label: "Dates", icon: LuCalendarClock },
+                { label: "SubTasks", icon: LuListChecks },
+                { label: "Effort Estimation", icon: LuTimer },
+              ].map((tab, idx) => (
+                <Tab
+                  key={idx}
+                  fontSize="sm"
+                  fontWeight="normal"
+                  px={4}
+                  py={1}
+                  borderRadius="0"
+                  borderBottom="2px solid transparent"
+                  color="#172B4D"
+                  _selected={{
+                    color: "#0052CC",
+                    borderBottom: "2px solid #0052CC",
+                    bg: "white",
+                    fontWeight: "bold",
+                  }}
+                  _focus={{ boxShadow: "none" }}
+                  _hover={{ bg: "#F4F5F7" }}
+                  display="flex"
+                  alignItems="center"
+                  gap={1}
+                ><Icon as={tab.icon} boxSize={4} />
+                  {tab.label}
+                </Tab>
+              ))}
+            </TabList>
+            <TabPanels w="100%">
+              <TabPanel p={0}>
+                <Card p={2} mb={2}>
+                  {/* <SimpleGrid columns={{ base: 1, md: 6 }} spacing={2}>
+                    {[
+                      { label: "CR Title / ID", field: "issueId" },
+                      { label: "Product Type", field: "productType" },
+                      { label: "Status", field: "status" },
+                      { label: "Work Type", field: "issueType" },
+                    ].map(({ label, field }) => {
+                      return (
+                        <Box key={field} justifyItems="center">
+                          <Text fontSize="15px">{label}</Text>
+                          <Editable
+                            fontSize="14px"
                             textAlign="start"
-                            value={editableFields[label] || ""}
-                            onSubmit={(val) => handleFieldChange(label, val)}
-                            onChange={(val) =>
-                              setEditableFields((prev) => ({
-                                ...prev,
-                                [label]: val,
-                              }))
-                            }
+                            value={issueData[field] || editableFields[field]}
+                            onSubmit={(val) => handleFieldChange(field, val)}
+                            onChange={(val) => setEditableFields((prev) => ({ ...prev, [field]: val }))}
                           >
-                            <EditablePreview sx={{ padding: 0 }} />
+                            <EditablePreview />
                             <EditableInput />
                           </Editable>
                         </Box>
-                      </GridItem>
-                    ))}
-                  </SimpleGrid>
-                )}
-                <Box>
-                  <Text fontSize="xl" fontWeight="bold">
-                    CR Details
-                  </Text>
-                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                    {["Status", "Priority", "Severity", "Work Type"].map((label) => (
-                      <Box key={label}>
-                        <FormLabel sx={labelStyle}>{label}</FormLabel>
-                        <Editable
+                      );
+                    })}
+                    <Box justifyItems="center">
+                      <Text fontSize="15px">Severity</Text>
+                      <Badge fontSize="14px" bg={{
+                        'Blocker': '#7f1d1d',  // red.900
+                        'Critical': '#dc2626', // red.600
+                        'High': '#fecaca',     // red.200
+                        'Medium': '#facc15',   // yellow.400
+                        'Low': '#a0aec0'       // gray.400
+                      }[editableFields["Severity"]] || '#a0aec0'} color="black">
+                        {editableFields["Severity"]}
+                      </Badge>
+                    </Box>
+                    <Box justifyItems="center">
+                      <Text fontSize="15px">Priority</Text>
+                      <Badge fontSize="14px" bg={{
+                        'Low': '#48bb78',      // green.400
+                        'Medium': '#facc15',   // yellow.400
+                        'High': '#dc2626',     // red.600
+                        'Regulatory': '#3b82f6', // blue.500
+                        'Rush Order': '#b91c1c'  // red.800
+                      }[editableFields["Priority"]] || '#a0aec0'} color="black">
+                        {editableFields["Priority"]}
+                      </Badge>
+                    </Box>
+                  </SimpleGrid> */}
+                  {issueData.workType === 'Defect' ? (
+                    <>
+                      <Box key="summary" mb={1}>
+                        <Text fontSize="15px">Summary</Text>
+                        <Editable p={0}
+                          fontSize="14px"
                           textAlign="start"
-                          value={editableFields[label] || ""}
-                          onSubmit={(val) => handleFieldChange(label, val)}
-                          onChange={(val) =>
-                            setEditableFields((prev) => ({
-                              ...prev,
-                              [label]: val,
-                            }))
-                          }
+                          value={issueData["summary"] || editableFields["summary"]}
+                          onSubmit={(val) => handleFieldChange("summary", val)}
+                          onChange={(val) => setEditableFields((prev) => ({ ...prev, ["summary"]: val }))}
                         >
                           <EditablePreview />
                           <EditableInput />
                         </Editable>
                       </Box>
-                    ))}
-                  </SimpleGrid>
-                </Box>
-
-                {/* Attachment Modal */}
-                {/* <Modal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} isCentered>
-                  <ModalOverlay />
-                  <ModalContent
-                    maxW={{ base: "90vw", sm: "80vw", md: "70vw", lg: "60vw", xl: "50vw" }}
-                  >
-                    <ModalHeader>{previewFile?.filename}</ModalHeader>
-                    <ModalCloseButton />
-                    <ModalBody>
-                      {previewFile?.type === "pdf" ? (
-                        <iframe
-                          src={previewFile.blobUrl}
-                          width="100%"
-                          height="500px"
-                          title={previewFile.filename}
-                          style={{ borderRadius: "8px", border: "1px solid #ddd" }}
-                        />
-                      ) : ["png", "jpg", "jpeg", "gif", "webp"].includes(previewFile?.type) ? (
-                        <Image
-                          src={previewFile.blobUrl}
-                          alt={previewFile.filename}
-                          maxW="100%"
-                          maxH="500px"
-                          borderRadius="md"
-                        />
-                      ) : (
-                        <Text>Preview not available for this file type.</Text>
-                      )}
-                    </ModalBody>
-                    <ModalFooter>
-                      <Button onClick={() => setIsPreviewOpen(false)}>Close</Button>
-                    </ModalFooter>
-                  </ModalContent>
-                </Modal> */}
-                <div style={{ margin: "5px" }}>
-                  <label style={{ fontSize: "16px", fontWeight: 500 }}>Activity</label>
-
-                  {/* <Tabs
-                    index={tabIndex}
-                    onChange={(index) => {
-                      console.log("Tab changed to index:", index);
-                      setTabIndex(index);
-                      console.log("tabIndex state updated to:", index);
-
-                      // If Attachments tab is selected (index 2)
-                      if (index === 2) {
-                        fetchAttachments();
-                      }
-                      if (index === 0) {
-                        fetchComments();
-                      }
-
-                      if (index === 3) fetchDateDetails();
-                      if (index === 1) fetchLinkedIssues();
-                      if (index === 4) fetchSubTasks();
-                    }}
-                  > */}
-                  <Box m={0}>
-                    <Tabs index={tabIndex} onChange={(index, event) => handleTabChange(index, event)} variant="unstyled" defaultIndex={0} maxW="800px">
-                      <TabList border="1px solid #dfe1e6" borderRadius="6px" bg="white" w="fit-content" mb={0} pb={0}>
+                      <HSeparator />
+                      <SimpleGrid columns={{ base: 1, md: 5 }} mt={1}>
                         {[
-                          { label: "Comments", icon: LuUser },
-                          { label: "Link Issues", icon: LuFolder },
-                          {
-                            label: (
-                              <>
-                                Attachments{" "}
-                                {attachments.length > 0 && (
-                                  <Box
-                                    borderRadius="full"
-                                    bg="#E5E7EB"
-                                    color="#4A5568"
-                                    fontSize="xs"
-                                    fontWeight="medium"
-                                    px={2}
-                                    py={0.5}
-                                    ml={1}
-                                  >
-                                    {attachments.length}
-                                  </Box>
-                                )}
-                              </>
-                            ),
-                            icon: LuPaperclip,
-                          },
-                          { label: "Dates", icon: LuCalendarClock },
-                          { label: "SubTasks", icon: LuListChecks },
-                          { label: "Resource Allocation", icon: GrResources },
-                        ].map((tab, idx) => (
-                          <Tab
-                            key={tab.label}
-                            fontSize="sm"
-                            fontWeight="normal"
-                            px={4}
-                            py={1}
-                            borderRadius="0"
-                            borderBottom="2px solid transparent"
-                            color="#172B4D"
-                            _selected={{
-                              color: "#0052CC",
-                              borderBottom: "2px solid #0052CC",
-                              bg: "white",
-                              fontWeight: "bold",
-                            }}
-                            _focus={{ boxShadow: "none" }}
-                            _hover={{ bg: "#F4F5F7" }}
-                            display="flex"
-                            alignItems="center"
-                            gap={1}
-                          ><Icon as={tab.icon} boxSize={4} />
-                            {tab.label}
-                          </Tab>
-                        ))}
-                        {/* <Tab ></Tab> */}
-                      </TabList>
-                      <TabPanels maxW="620px">
-                        <TabPanel p='12px 0 12px' >
-                          <HStack align="flex-start" spacing={3} mb={2}>
-                            <Avatar name={username} size="sm" />
-                            <Box flex="1">
-                              {!showEditor ? (
-                                <Input placeholder='Add a comment'
-                                  onFocus={() => {
-                                    setShowEditor(true);
-                                    setTimeout(() => {
-                                      quillRef.current?.getEditor().focus();
-                                    }, 0);
-                                  }}
-                                  bg="white"
-                                />
-                              ) : (
-                                <VStack align="stretch" spacing={3}>
-                                  <ReactQuill ref={quillRef} className="custom-quill"
-                                    theme="snow"
-                                    value={value}
-                                    onChange={setValue}
-                                    placeholder='Type your comment or @ to mention or notify someone.'
-                                    modules={modules}
-                                    formats={formats}
-                                    style={{ minHeight: 80, fontSize: "0.7rem" }}
-                                  />
-                                  <HStack>
-                                    <Button colorScheme='blue' size="sm" onClick={handleAddComment}>
-                                      Save
-                                    </Button>
-                                    <Button size="sm" variant="ghost" onClick={() => setShowEditor(false)} >
-                                      Cancel
-                                    </Button>
-                                  </HStack>
-                                </VStack>
-                              )}
-                            </Box>
-                          </HStack>
-                          {/* Comment List */}
-                          <VStack mt={2} align="stretch" spacing={4}
-                            overflowY="auto"
-                            p={3}
-                            bg="white"
-                            maxH="280px"
-                            className='container'
-                          >
-                            {comments.map((comment, index) => (
-                              <Box key={index} mb={4} borderBottom="1px solid #E2E8F0" pb={3}>
-                                <HStack align="flex-start" spacing={3}>
-                                  <Avatar name={comment.author} size="sm" />
-                                  <Box flex="1">
-                                    <Text fontWeight="bold">{comment.author}</Text>
-                                    <Text fontSize="xs" color="gray.500" mb={1}>
-                                      {comment.timestamp}
-                                    </Text>
-                                    {/* Edit Mode */}
-                                    {isEditing && editIndex === index ? (
-                                      <Box>
-                                        <ReactQuill
-                                          ref={quillRef}
-                                          className="custom-quill"
-                                          onChange={setEditValue}
-                                          modules={modules}
-                                          formats={formats}
-                                          theme='snow'
-                                          style={{ minHeight: 80, fontSize: "0.7rem" }}
-                                        />
-                                        <HStack mt={2}>
-                                          <Button colorScheme='blue' size="xs" onClick={handleSaveEdit}>Save</Button>
-                                          <Button size="xs" variant="ghost" onClick={() => { setIsEditing(false); setEditIndex(null); }}>Cancel</Button>
-                                        </HStack>
-                                      </Box>
-                                    ) : (
-                                      <Box className='q1-editor'
-                                        dangerouslySetInnerHTML={{ __html: comment.text }} p={0} mb={2} />
-                                    )}
-                                    <HStack spacing={3} fontSize="sm" color="gray.500" pb={2}>
-                                      {!(isEditing && editIndex === index) && (
-                                        <Button size="xs" variant="link" onClick={() => toggleReplyEditor(index)}>Reply</Button>
-                                      )}
-                                      {comment.author === username && !isEditing && (
-                                        <Button size="xs" variant="link" onClick={() => handleEditClick(index)}>Edit</Button>
-                                      )}
-                                    </HStack>
-                                    {/* Replies Section */}
-                                    {replyEditors[index] && (
-                                      <Box mt={2} ml={10}>
-                                        <ReactQuill
-                                          ref={replyQuillRefs.current[index]}
-                                          className="custom-quill"
-                                          value={replyValues[index] || ""}
-                                          onChange={(val) => handleReplyChange(val, index)}
-                                          modules={modules}
-                                          formats={formats}
-                                          theme='snow'
-                                          style={{ minHeight: 60, fontSize: "0.7rem" }}
-                                        />
-                                        <HStack mt={2}>
-                                          <Button colorScheme='blue' size="xs" onClick={() => handleAddReply(index)}>Submit</Button>
-                                          <Button size="xs" variant="ghost" onClick={() => toggleReplyEditor(index)}>Cancel</Button>
-                                        </HStack>
-                                      </Box>
-                                    )}
-                                    {/* Display Replies */}
-                                    {comment.replies && comment.replies.length > 0 && (
-                                      <VStack spacing={3} mt={2} pl={6} align="stretch">
-                                        {comment.replies.map((reply, rIndex) => (
-                                          <Box key={rIndex} p={2} bg="gray.50" borderRadius="md">
-                                            <HStack spacing={2} align="center">
-                                              <Avatar name={reply.author} size="xs" />
-                                              <Text fontWeight="bold" fontSize="sm">{reply.author}</Text>
-                                              <Text fontSize="xs" color="gray.500">{reply.timestamp}</Text>
-                                            </HStack>
-                                            <Box mt={1} dangerouslySetInnerHTML={{ __html: reply.text }} />
-                                          </Box>
-                                        ))}
-                                      </VStack>
-                                    )}
-                                  </Box>
-                                </HStack>
-                              </Box>
-                            ))}
-                          </VStack>
-                        </TabPanel>
-                        <TabPanel p={0}>
-                          <Box maxH="400px" overflowY="auto" border="1px solid #E2E8F0" borderRadius="md" p={3}>
-                            <Text fontWeight="bold" fontSize="md" mb={2}>Linked Work Items</Text>
-                            <Text fontSize="sm" mb={3} color="gray.500">is blocked by</Text>
-
-                            <VStack spacing={3} align="stretch">
-                              {linkedIssues.map((issue) => (
-                                <Flex
-                                  key={issue.id}
-                                  p={3}
-                                  borderRadius="md"
-                                  bg="white"
-                                  boxShadow="sm"
-                                  align="center"
-                                  justify="space-between"
-                                  _hover={{ boxShadow: "md", cursor: "pointer" }}
-                                >
-                                  {/* Left Section: Issue Info */}
-                                  <Flex align="center" gap={3}>
-                                    <Icon as={FaBug} color="red.500" boxSize={5} />
-                                    <Box>
-                                      <Text
-                                        onClick={() => window.location.href = `/admin/view/${issue.issueId}`}
-                                        color="blue.600"
-                                        fontWeight="bold"
-                                        _hover={{ textDecoration: "underline" }}
-                                      >
-                                        {issue.issueId}
-                                      </Text>
-                                      <Text fontSize="sm" color="gray.600">
-                                        {issue.summary.length > 80
-                                          ? issue.summary.slice(0, 77) + "..."
-                                          : issue.summary}
-                                      </Text>
-                                    </Box>
-                                  </Flex>
-
-                                  {/* Right Section: Assignee + Status */}
-                                  <Flex align="center" gap={2}>
-                                    <Tooltip label={issue.assignee} fontSize="sm" hasArrow>
-                                      <Avatar size="sm" icon={<FaUserCircle />} />
-                                    </Tooltip>
-                                    <Tag
-                                      size="sm"
-                                      colorScheme={
-                                        issue.status === "Closed" ? "green" :
-                                          issue.status === "In Progress" ? "yellow" :
-                                            issue.status === "Open" ? "blue" :
-                                              "gray"
-                                      }
-                                    >
-                                      {issue.status}
-                                    </Tag>
-                                  </Flex>
-                                </Flex>
-                              ))}
-                            </VStack>
-                          </Box>
-                        </TabPanel>
-                        {/* <TabPanel>
-                            {
-                              <VStack align="stretch" spacing={5}>
-                                {["TSD", "FSD", "Others"].map((category) => {
-                                  const filtered = attachments.filter((att) => {
-                                    const name = att.filename.toLowerCase();
-                                    if (category === "TSD") return name.includes("tsd");
-                                    if (category === "FSD") return name.includes("fsd");
-                                    return !name.includes("tsd") && !name.includes("fsd");
-                                  });
-
-                                  if (filtered.length === 0) return null;
-
-                                  return (
-                                    <Box key={category}>
-                                      <HStack mb={2}>
-                                        <Icon as={LuFolder} color="blue.500" />
-                                        <Text fontWeight="bold" fontSize="lg">
-                                          {category} Documents
-                                        </Text>
-                                      </HStack>
-                                      <VStack spacing={3} align="stretch">
-                                        {filtered.map((att) => {
-                                          const fileType = getFileType(att.filename);
-                                          const mimeType = getMimeType(fileType);
-                                          const blobUrl = `data:${mimeType};base64,${att.filedata}`;
-                                          const isImage = mimeType.startsWith("image");
-
-                                          const isPDF = mimeType === "application/pdf";
-
-                                          return (
-                                            <HStack
-                                              key={att.attachmentId}
-                                              p={2}
-                                              bg="gray.50"
-                                              borderRadius="md"
-                                              justify="space-between"
-                                            >
-                                              {isImage ? (
-                                                <Image
-                                                  boxSize="50px"
-                                                  src={blobUrl}
-                                                  alt={att.filename}
-                                                  objectFit="cover"
-                                                  borderRadius="md"
-                                                />
-                                              ) : (
-                                                <Icon as={LuFolder} boxSize={6} color="gray.400" />
-                                              )}
-
-                                              <VStack align="start" flex="1" spacing={0}>
-                                                <Text fontWeight="medium">{att.filename}</Text>
-                                                <Text fontSize="sm" color="gray.500">
-                                                  {att.uploadedBy} • {new Date(att.uploadedTimestamp).toLocaleString()}
-                                                </Text>
-                                              </VStack>
-
-                                              <HStack spacing={2}>
-                                                <a href={blobUrl} download={att.filename}>
-                                                  <Button size="sm">Download</Button>
-                                                </a>
-                                                <Button
-                                                  size="sm"
-                                                  onClick={() => {
-                                                    setPreviewFile({
-                                                      filename: att.filename,
-                                                      blobUrl,
-                                                      type: fileType,
-                                                      mimeType,
-                                                    });
-                                                    setIsPreviewOpen(true);
-                                                  }}
-                                                >
-                                                  View
-                                                </Button>
-                                              </HStack>
-                                            </HStack>
-                                          );
-                                        })}
-
-                                      </VStack>
-                                    </Box>
-                                  );
-                                })}
-                              </VStack>
-                            }
-                          </TabPanel> */}
-                        <TabPanel p="7px 0">
-                          <Table variant="simple" mt={0}>
-                            <Thead>
-                              <Tr
-                                sx={{
-                                  '& > th': {
-                                    borderBottom: '2px solid',
-                                    borderColor: 'gray.200',
-                                  },
-                                  '& > th:not(:last-child)': {
-                                    textAlign: "start",
-                                    padding: "4px 8px",
-                                    _hover: {
-                                      bg: 'gray.400',
-                                      cursor: 'pointer',
-                                    },
-                                  },
-                                }}
+                          { label: "CR Title / ID", field: "issueId" },
+                          // { label: "Summary", field: "summary" },
+                          { label: "Work Type", field: "workType" },
+                          { label: "Product Type", field: "productType" },
+                          // { label: "Severity", field: "severity" },
+                        ].map(({ label, field }) => {
+                          return (
+                            <Box key={field} justifyItems="center">
+                              <Text fontSize="15px">{label}</Text>
+                              <Editable
+                                fontSize="14px"
+                                textAlign="start"
+                                value={issueData[field] || editableFields[field]}
+                                onSubmit={(val) => handleFieldChange(field, val)}
+                                onChange={(val) => setEditableFields((prev) => ({ ...prev, [field]: val }))}
                               >
-                                <Th w="40%">Name</Th>
-                                <Th w="15%">Size</Th>
-                                <Th w="30%">Date Added</Th>
-                                <Th textAlign="end" w="15%">
-
-                                </Th>
-                              </Tr>
-                            </Thead>
-                            <Tbody
-                              sx={{
-                                '& > tr': {
-                                  fontSize: '0.9rem',
-                                  _hover: {
-                                    bg: 'gray.200',
-                                    cursor: 'pointer',
-                                  }
-                                }
-                              }}
-                            >
-                              {attachments.map((attachment) => {
-                                const fileType = getFileType(attachment.filename);
-                                const mimeType = getMimeType(fileType);
-                                const blobUrl = `data:${mimeType};base64,${attachment.fileData}`;
-                                return (
-                                  <Tr key={attachment.id}
-                                    sx={{
-                                      '& > td': {
-                                        padding: '4px 8px 4px 8px',
-                                        textAlign: 'start'
-                                      },
+                                <EditablePreview />
+                                <EditableInput />
+                              </Editable>
+                            </Box>
+                          );
+                        })}
+                        <Box justifyItems="center">
+                          <Text fontSize="15px">Severity</Text>
+                          <Badge fontSize="14px" bg={{
+                            'Blocker': '#7f1d1d',  // red.900
+                            'Critical': '#dc2626', // red.600
+                            'High': '#fecaca',     // red.200
+                            'Medium': '#facc15',   // yellow.400
+                            'Low': '#a0aec0'       // gray.400
+                          }[editableFields["Severity"]] || '#a0aec0'} color="white">
+                            {editableFields["Severity"]}
+                          </Badge>
+                        </Box>
+                        <Box justifyItems="center">
+                          <Text fontSize="15px" >Status</Text>
+                          <Popover isOpen={isOpen} onClose={() => setIsOpen(false)}>
+                            <PopoverTrigger>
+                              <div>
+                                <Menu isOpen={showDropdown} onClose={() => setShowDropdown(false)}>
+                                  <MenuButton
+                                    as={Button}
+                                    size="sm"
+                                    variant="outline"
+                                    rightIcon={<ChevronDownIcon />}
+                                    onClick={() => {
+                                      fetchTransitions(); // still calls your API
+                                      setShowDropdown(!showDropdown);
                                     }}
                                   >
-                                    <Td>
-                                      <HStack>
-                                        {(() => {
-                                          const ext = getFileType(attachment.filename);
-                                          const mimeType = getMimeType(ext);
-                                          if (mimeType.startsWith("image/")) {
-                                            return <Icon as={LuImage} boxSize={5} color="blue.600" />;
-                                          } else if (mimeType === "text/plain") {
-                                            return <Icon as={LuFileText} boxSize={5} color="blue.600" />;
+                                    {status || "Change Status"}
+                                  </MenuButton>
+
+                                  <MenuList minW="250px" p={1}>
+                                    {transitionOptions.map((option, index) => (
+                                      <MenuItem
+                                        key={index}
+                                        onClick={() => {
+                                          if (option.hasScreen) {
+                                            const fields = option.requiredFields
+                                              ? option.requiredFields.split(",").map((f) => f.trim())
+                                              : [];
+                                            setTransitionPopupData({ ...option, parsedFields: fields });
+                                            setIsTransitionPopupOpen(true);
                                           } else {
-                                            return <Icon as={LuFile} boxSize={5} color="blue.600" />;
+                                            handleStatusChange(option.toStatus);
                                           }
-                                        })()}
-                                        <Tooltip label={`Uploaded by: ${attachment.author}`} placement="bottom" hasArrow>
-                                          <Text ml={2} cursor="pointer">
-                                            {attachment.filename}
-                                          </Text>
-                                        </Tooltip>
-                                      </HStack>
-                                    </Td>
-                                    <Td>{formatSize(attachment.size)}</Td>
-                                    <Td>{formatDates(attachment.dateAdded)}</Td>
-                                    <Td textAlign="cwn">
-                                      <IconButton
-                                        aria-label="Delete Attachment"
-                                        icon={<LuTrash />}
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleDelete(attachment.issueId, attachment.filename)}
-                                        mr={2}
-                                      />
-                                      <IconButton
-                                        aria-label="Download Attachment"
-                                        icon={<LuDownload />}
-                                        size="sm"
-                                        variant="ghost"
-                                        as="a"
-                                        href={blobUrl}
-                                        download={attachment.filename}
-                                      />
-                                    </Td>
-                                  </Tr>
-                                )
-                              }
-                              )}
-                            </Tbody>
-                          </Table>
-                        </TabPanel>
-
-                        <TabPanel p={0}>
-                          {/* Dates tab panel content */}
-                          <Table variant="simple" size="sm">
-                            <Thead bg="gray.100">
-                              <Tr>
-                                <Th>Phase</Th>
-                                <Th>Planned Start</Th>
-                                <Th>Planned End</Th>
-                                <Th>Actual Start</Th>
-                                <Th>Actual End</Th>
-                                <Th>Duration</Th>
-                                <Th>Delay</Th>
-                              </Tr>
-                            </Thead>
-                            <Tbody>
-                              {[
-                                {
-                                  title: "FSD",
-                                  plannedStart: dateDetails?.plannedFSDStartDate,
-                                  plannedEnd: dateDetails?.plannedFSDEndDate,
-                                  actualStart: null,
-                                  actualEnd: null,
-                                },
-                                {
-                                  title: "QA Testing",
-                                  plannedStart: dateDetails?.plannedQaTestingStartDate,
-                                  plannedEnd: dateDetails?.plannedQaTestingEndDate,
-                                  actualStart: dateDetails?.actualQaTestingStartDate,
-                                  actualEnd: dateDetails?.actualQaTestingEndDate,
-                                },
-                                {
-                                  title: "UAT",
-                                  plannedStart: dateDetails?.plannedUatStartDate,
-                                  plannedEnd: dateDetails?.plannedUatEndDate,
-                                  actualStart: null,
-                                  actualEnd: null,
-                                },
-                                {
-                                  title: "Go Live",
-                                  plannedStart: dateDetails?.plannedGoLiveDate,
-                                  plannedEnd: null,
-                                  actualStart: null,
-                                  actualEnd: dateDetails?.actualGoLiveDate,
-                                },
-                              ].map((row) => {
-                                const formatDate = (d) => d ? new Date(d).toLocaleDateString() : "-";
-                                const duration = (s, e) => (s && e) ? `${(new Date(e) - new Date(s)) / (1000 * 3600 * 24)} day(s)` : "-";
-                                const delay = (planned, actual) => (planned && actual)
-                                  ? `${(new Date(actual) - new Date(planned)) / (1000 * 3600 * 24)} day(s)`
-                                  : "-";
-
-                                return (
-                                  <Tr key={row.title}>
-                                    <Td>{row.title}</Td>
-                                    <Td>{formatDate(row.plannedStart)}</Td>
-                                    <Td>{formatDate(row.plannedEnd)}</Td>
-                                    <Td>{formatDate(row.actualStart)}</Td>
-                                    <Td>{formatDate(row.actualEnd)}</Td>
-                                    <Td>{duration(row.plannedStart, row.plannedEnd)}</Td>
-                                    <Td>{delay(row.plannedEnd, row.actualEnd)}</Td>
-                                  </Tr>
-                                );
-                              })}
-                            </Tbody>
-                          </Table>
-                        </TabPanel>
-                        <TabPanel>
-                          <Box maxH="500px" overflowY="auto" p={2}>
-                            <Text fontWeight="bold" fontSize="md" mb={3}>Subtasks</Text>
-
-                            <VStack spacing={4} align="stretch">
-                              {subTasks.map((task) => {
-                                let typeIcon;
-                                switch ((task.issueType || "").toLowerCase()) {
-                                  case 'maintenance':
-                                    typeIcon = <MdAttachMoney color="green" size={20} />;
-                                    break;
-                                  case 'qa':
-                                    typeIcon = <PiTestTubeFill color="purple" size={20} />;
-                                    break;
-                                  default:
-                                    typeIcon = <MdAssignment color="blue" size={20} />;
-                                }
-
-                                const priorityIcon = <FaArrowUp color="red" />;
-                                const statusColor =
-                                  (task.status || "").toLowerCase().includes("close") ? "green.100"
-                                    : (task.status || "").toLowerCase().includes("development") ? "blue.100"
-                                      : "gray.100";
-
-                                return (
-                                  <Flex
-                                    key={task.id}
-                                    p={4}
-                                    bg="white"
-                                    borderRadius="md"
-                                    boxShadow="sm"
-                                    justify="space-between"
-                                    align="center"
-                                    _hover={{ boxShadow: "md", cursor: "pointer" }}
-                                    onClick={() => window.location.href = `/admin/view/${task.issueId}`}
-                                  >
-                                    {/* Left section with icon, ID, Summary */}
-                                    <HStack spacing={4}>
-                                      <Box>{typeIcon}</Box>
-                                      <Box>
-                                        <Text fontWeight="bold" color="blue.600">
-                                          {task.issueId}
-                                        </Text>
-                                        <Text fontSize="sm" color="gray.600" noOfLines={1}>
-                                          {task.summary}
-                                        </Text>
-                                      </Box>
-                                    </HStack>
-
-                                    {/* Right section with Priority, Assignee (Avatar only), Status */}
-                                    <HStack spacing={4}>
-                                      <Box>{priorityIcon}</Box>
-                                      <Tooltip label={task.assignee} fontSize="sm" hasArrow>
-                                        <Avatar size="sm" icon={<FaUserCircle />} name={task.assignee} />
-                                      </Tooltip>
-                                      <Tag bg={statusColor} color="gray.800" fontWeight="bold" px={3} py={1}>
-                                        {task.status}
-                                      </Tag>
-                                    </HStack>
-                                  </Flex>
-                                );
-                              })}
-                            </VStack>
-                          </Box>
-                        </TabPanel>
-                        <TabPanel>
-                          <EffortEstimationTable
-                            issueData={issueData}
-                            subTasks={subTasks}
-                            linkedIssues={linkedIssues}
-                            nestedChildCRs={nestedChildCRs}
-                            dateDetails={dateDetails}
-                            allUsers={allUsers}
-                          />
-                        </TabPanel>
-                      </TabPanels>
-                    </Tabs>
-                  </Box>
-                </div>
-
-              </div>
-            </div>
-          </div>
-
-          {/* Divider */}
-          {/* <div style={{ width: "1px", backgroundColor: "#c9c9c9", height:  }}></div> */}
-
-          {/* Right Section (30%) */}
-          <div
-            style={{ flex: 2.5, height: "50%" }}
-          >
-            <div style={{ marginTop: "10px", marginLeft: "10px" }}>
-              {/* Popover */}
-              <Popover isOpen={isOpen} onClose={() => setIsOpen(false)}>
-                <PopoverTrigger>
-
-                  <div>
-                    <Menu isOpen={showDropdown} onClose={() => setShowDropdown(false)}>
-                      <MenuButton
-                        as={Button}
-                        size="sm"
-                        variant="outline"
-                        rightIcon={<ChevronDownIcon />}
-                        onClick={() => {
-                          fetchTransitions(); // still calls your API
-                          setShowDropdown(!showDropdown);
-                        }}
-                      >
-                        {status || "Change Status"}
-                      </MenuButton>
-
-                      <MenuList minW="250px" p={1}>
-                        {transitionOptions.map((option, index) => (
-                          <MenuItem
-                            key={index}
-                            onClick={() => {
-                              if (option.hasScreen) {
-                                const fields = option.requiredFields
-                                  ? option.requiredFields.split(",").map((f) => f.trim())
-                                  : [];
-                                setTransitionPopupData({ ...option, parsedFields: fields });
-                                setIsTransitionPopupOpen(true);
-                              } else {
-                                handleStatusChange(option.toStatus);
-                              }
-                              setShowDropdown(false);
-                            }}
-                            px={3}
-                            py={2}
-                          >
-                            <HStack justify="space-between" w="100%">
-                              <Box>
-                                <Text fontSize="sm">{option.action || "Transition to"}</Text>
-                              </Box>
-                              <HStack>
-                                <Icon as={ArrowRightIcon} boxSize={4} />
-                                <Tag
-                                  size="sm"
-                                  variant="solid"
-                                  colorScheme={getTagColor(option.toStatus)}
-                                >
-                                  {option.toStatus}
-                                </Tag>
-                              </HStack>
-                            </HStack>
-                          </MenuItem>
-                        ))}
-
-                        {/* <MenuItem
-                          onClick={() => {
-                            console.log("View workflow clicked");
-                          }}
-                          mt={1}
-                          fontSize="sm"
-                          fontWeight="medium"
-                          color="blue.500"
+                                          setShowDropdown(false);
+                                        }}
+                                        px={3}
+                                        py={2}
+                                      >
+                                        <HStack justify="space-between" w="100%">
+                                          <Box>
+                                            <Text fontSize="sm">{option.action || "Transition to"}</Text>
+                                          </Box>
+                                          <HStack>
+                                            <Icon as={ArrowRightIcon} boxSize={4} />
+                                            <Tag
+                                              size="sm"
+                                              variant="solid"
+                                              colorScheme={getTagColor(option.toStatus)}
+                                            >
+                                              {option.toStatus}
+                                            </Tag>
+                                          </HStack>
+                                        </HStack>
+                                      </MenuItem>
+                                    ))}
+                                  </MenuList>
+                                </Menu>
+                              </div>
+                            </PopoverTrigger>
+                          </Popover>
+                        </Box>
+                      </SimpleGrid>
+                    </>
+                  ) : (
+                    <>
+                      <Box key="summary" mb={1}>
+                        <Text fontSize="15px">Project / CR Name</Text>
+                        <Editable
+                          fontSize="14px"
+                          textAlign="start"
+                          value={issueData["summary"] || editableFields["summary"]}
+                          onSubmit={(val) => handleFieldChange("summary", val)}
+                          onChange={(val) => setEditableFields((prev) => ({ ...prev, ["summary"]: val }))}
                         >
-                          View workflow
-                        </MenuItem> */}
-                      </MenuList>
-                    </Menu>
-                  </div>
+                          <EditablePreview />
+                          <EditableInput />
+                        </Editable>
+                      </Box>
+                      <HSeparator />
+                      <SimpleGrid columns={{ base: 1, md: 4 }}>
+                        {[
+                          { label: "CR Title / ID", field: "issueId" },
+                          // { label: "Project / CR Name", field: "summary" },
+                          { label: "Work Type", field: "issueType" },
+                          // { label: "Priority", field: "priority" },
+                        ].map(({ label, field }) => {
+                          return (
+                            <Box key={field} justifyItems="center">
+                              <Text fontSize="15px">{label}</Text>
+                              <Editable
+                                fontSize="14px"
+                                textAlign="start"
+                                value={issueData[field] || editableFields[field]}
+                                onSubmit={(val) => handleFieldChange(field, val)}
+                                onChange={(val) => setEditableFields((prev) => ({ ...prev, [field]: val }))}
+                              >
+                                <EditablePreview />
+                                <EditableInput />
+                              </Editable>
+                            </Box>
+                          );
+                        })}
+                        <Box justifyItems="center">
+                          <Text fontSize="15px">Priority</Text>
+                          <Badge fontSize="14px" bg={{
+                            'Low': '#48bb78',      // green.400
+                            'Medium': '#facc15',   // yellow.400
+                            'High': '#dc2626',     // red.600
+                            'Regulatory': '#3b82f6', // blue.500
+                            'Rush Order': '#b91c1c'  // red.800
+                          }[editableFields["Priority"]] || '#a0aec0'} color="black">
+                            {editableFields["Priority"]}
+                          </Badge>
+                        </Box>
+                        <Box>
+                          <Text fontSize="14px">Status</Text>
+                          <Popover isOpen={isOpen} onClose={() => setIsOpen(false)}>
+                            <PopoverTrigger>
 
-                </PopoverTrigger>
-              </Popover>
-            </div>
-          </div>
-        </div>
-        <Modal
-          isOpen={isTransitionPopupOpen}
-          onClose={() => setIsTransitionPopupOpen(false)}
-          size="xl"
-          isCentered
-        >
-          <ModalOverlay />
-          <ModalContent borderRadius="lg" boxShadow="lg">
-            <ModalHeader fontWeight="bold" fontSize="xl">
-              {transitionPopupData?.toStatus} - Required Fields
-            </ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <VStack spacing={5} align="stretch">
-                {transitionPopupData?.requiredFields?.split(",").map((field) => {
-                  const trimmedField = field.trim();
-                  const isDate = trimmedField.toLowerCase().includes("date");
+                              <div>
+                                <Menu isOpen={showDropdown} onClose={() => setShowDropdown(false)}>
+                                  <MenuButton
+                                    as={Button}
+                                    size="sm"
+                                    variant="outline"
+                                    rightIcon={<ChevronDownIcon />}
+                                    onClick={() => {
+                                      fetchTransitions(); // still calls your API
+                                      setShowDropdown(!showDropdown);
+                                    }}
+                                  >
+                                    {status || "Change Status"}
+                                  </MenuButton>
 
-                  // Assignee autocomplete input
-                  if (trimmedField.toLowerCase() === "assignee") {
-                    return (
-                      <FormControl key={trimmedField} position="relative" isRequired>
-                        <FormLabel>
-                          {trimmedField} <span style={{ color: "red" }}>*</span>
-                        </FormLabel>
-                        <Input
-                          value={transitionFormData.assignee || ""}
-                          onChange={(e) =>
-                            setTransitionFormData((prev) => ({
-                              ...prev,
-                              assignee: e.target.value,
-                            }))
-                          }
-                          autoComplete="off"
-                          borderColor="gray.300"
-                          _hover={{ borderColor: "brandScheme.400" }}
-                          _focus={{ borderColor: "brandScheme.400" }}
-                          backgroundColor="white"
-                        />
-                        {userSuggestions.length > 0 && (
-                          <Box
-                            mt={1}
-                            border="1px solid"
-                            borderColor="gray.200"
-                            borderRadius="md"
-                            maxHeight="200px"
-                            overflowY="auto"
-                            bg="white"
-                            zIndex={10}
-                            position="absolute"
-                            width="100%"
-                          >
-                            <List spacing={1}>
-                              {userSuggestions.map((user) => (
-                                <ListItem
-                                  key={user.id}
-                                  px={3}
-                                  py={1}
-                                  _hover={{ bg: "gray.100", cursor: "pointer" }}
-                                  onClick={() => {
-                                    setTransitionFormData((prev) => ({
-                                      ...prev,
-                                      assignee: user.username,
-                                    }));
-                                    setUserSuggestions([]);
-                                  }}
-                                >
-                                  {user.username}
-                                </ListItem>
-                              ))}
-                            </List>
-                          </Box>
-                        )}
-                      </FormControl>
-                    );
-                  }
-                  if (trimmedField.toLowerCase() === "comments") {
-                    return (
-                      <FormControl key={trimmedField} isRequired>
-                        <FormLabel>
-                          {trimmedField} <span style={{ color: "red" }}>*</span>
-                        </FormLabel>
-                        <ReactQuill
-                          theme="snow"
-                          value={transitionFormData.comments || ""}
-                          onChange={(content) =>
-                            setTransitionFormData((prev) => ({
-                              ...prev,
-                              comments: content,
-                            }))
-                          }
-                        />
-                      </FormControl>
-                    );
-                  }
-                  return (
-                    < FormControl key={trimmedField} isRequired >
-                      <FormLabel>
-                        {trimmedField} <span style={{ color: "red" }}>*</span>
-                      </FormLabel>
-                      <Input
-                        type={isDate ? "date" : "text"}
-                        placeholder={`Enter ${trimmedField}`}
-                        value={transitionFormData[trimmedField] || ""}
-                        onChange={(e) =>
-                          setTransitionFormData((prev) => ({
-                            ...prev,
-                            [trimmedField]: e.target.value,
-                          }))
-                        }
-                      />
-                    </FormControl>
-                  );
-                })}
-              </VStack>
-            </ModalBody>
+                                  <MenuList minW="250px" p={1}>
+                                    {transitionOptions.map((option, index) => (
+                                      <MenuItem
+                                        key={index}
+                                        onClick={() => {
+                                          if (option.hasScreen) {
+                                            const fields = option.requiredFields
+                                              ? option.requiredFields.split(",").map((f) => f.trim())
+                                              : [];
+                                            setTransitionPopupData({ ...option, parsedFields: fields });
+                                            setIsTransitionPopupOpen(true);
+                                          } else {
+                                            handleStatusChange(option.toStatus);
+                                          }
+                                          setShowDropdown(false);
+                                        }}
+                                        px={3}
+                                        py={2}
+                                      >
+                                        <HStack justify="space-between" w="100%">
+                                          <Box>
+                                            <Text fontSize="sm">{option.action || "Transition to"}</Text>
+                                          </Box>
+                                          <HStack>
+                                            <Icon as={ArrowRightIcon} boxSize={4} />
+                                            <Tag
+                                              size="sm"
+                                              variant="solid"
+                                              colorScheme={getTagColor(option.toStatus)}
+                                            >
+                                              {option.toStatus}
+                                            </Tag>
+                                          </HStack>
+                                        </HStack>
+                                      </MenuItem>
+                                    ))}
 
-            <ModalFooter>
-              <Button
-                colorScheme="blue"
-                mr={3}
-                onClick={async () => {
-                  const requiredFields =
-                    transitionPopupData?.requiredFields
-                      ?.split(",")
-                      .map((f) => f.trim()) || [];
 
-                  // Validate all required fields filled
-                  // const isFormValid = requiredFields.every(
-                  //   (field) => transitionFormData[field] && transitionFormData[field].toString().trim() !== ""
-                  // );
-                  const isFormValid = requiredFields.every((field) => {
-                    const camelKey = toCamelCase(field);
-                    const val =
-                      transitionFormData[camelKey] ?? transitionFormData[field];
-                    return val && val.toString().trim() !== "";
-                  });
+                                  </MenuList>
+                                </Menu>
+                              </div>
 
-                  if (!isFormValid) {
-                    toast.error("Please fill all required fields.");
-                    return;
-                  }
-
-                  // Build payload for status transition API
-                  const payload = {
-                    issueId: id,
-                    issueType: issueData.issueType,
-                    status: transitionPopupData?.toStatus,
-                  };
-
-                  requiredFields.forEach((field) => {
-                    const camelKey = toCamelCase(field);
-                    payload[camelKey] = transitionFormData[field];
-                  });
-
-                  try {
-                    // Submit main transition data
-                    const response = await fetch(
-                      "http://localhost:8080/api/crDataPush",
-                      {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify(payload),
+                            </PopoverTrigger>
+                          </Popover>
+                        </Box>
+                      </SimpleGrid>
+                    </>
+                  )}
+                  <HSeparator my={1} />
+                  <Box>
+                    <Text sx={{
+                      margin: 0,
+                      fomfontSize: "15px"
+                    }}>Description</Text>
+                    <Editable fontSize="14px"
+                      textAlign="start"
+                      value={editableFields["Description"] || ""}
+                      onSubmit={(val) => handleFieldChange("Description", val)}
+                      onChange={(val) =>
+                        setEditableFields((prev) => ({
+                          ...prev,
+                          ["Description"]: val,
+                        }))
                       }
-                    );
+                    >
+                      <EditablePreview />
+                      <EditableInput />
+                    </Editable>
+                  </Box>
+                </Card>
+                <Flex gap={2}>
+                  <Box flex="1">
+                    <Card p={2}>
+                      <Heading fontSize="15px" mb={0.5}>
+                        Business Information
+                      </Heading>
+                      <HSeparator />
+                      <SimpleGrid columns={2} spacing={1} fontSize="14px">
+                        <Text>Responsible Function</Text>
+                        <Text>{issueData.responsibleFunction || ''}</Text>
+                        <Text>Sub Function</Text>
+                        <Text>{issueData.subFunction || ''}</Text>
+                        <Text>Business Module</Text>
+                        <Text>{issueData.module || ''}</Text>
+                        <Text>Business Type</Text>
+                        <Text>{issueData.businessType || ''}</Text>
+                        <Text>Qualitative Benefit</Text>
+                        <Text>{issueData.qualitativeBenefits || ''}</Text>
+                        <Text>Quantitative Benefit</Text>
+                        <Text>{issueData.quantitativeBenefits || ''}</Text>
+                        <Text>Benefit Value</Text>
+                        <Text>{issueData.quantitativeBenefitValue || ''}</Text>
+                      </SimpleGrid>
+                    </Card>
+                  </Box>
+                  <Box flex="1">
+                    <Card p={2}>
+                      <Heading fontSize="15px" mb={0.5}>
+                        Application Details
+                      </Heading>
+                      <HSeparator />
+                      <SimpleGrid columns={2} spacing={1} fontSize="14px">
+                        <Text>Application Name</Text>
+                        <Text>{issueData.primaryApplication || 'App'}</Text>
+                        <Text>Application Category</Text>
+                        <Text>{issueData.applicationCategory || 'Something'}</Text>
+                      </SimpleGrid>
+                    </Card>
+                    <Card p={2} mt={2}>
+                      <Heading fontSize="15px" mb={0.5}>CR Status Reasons</Heading>
+                      <HSeparator />
+                      <SimpleGrid columns={2} spacing={1} fontSize="14px">
+                        <Text>CR Dropped Reason</Text>
+                        <Text>{issueData.droppedReason || 'Not Applicable'}</Text>
+                        <Text>CR on Hold Reason</Text>
+                        <Text>{issueData.onHoldReason || 'Awaiting Approval'}</Text>
+                        <Text>Sub Function</Text>
+                        <Text>{issueData.subFunction || 'UI/UX'}</Text>
+                      </SimpleGrid>
+                    </Card>
+                  </Box>
+                  <Box flex="1">
+                    <Card p={2}>
+                      <Heading fontSize="15px" mb={0.5}>Resource Allocation</Heading>
+                      <HSeparator />
+                      <SimpleGrid columns={2} spacing={1} fontSize="14px">
+                        <Text>Assignee</Text>
+                        <Text>{issueData.assignee || 'User'}</Text>
+                        <Text>Business Analyst</Text>
+                        <Text>{issueData.businessAnalyst || 'BA'}</Text>
+                        <Text>Project Manager</Text>
+                        <Text>{issueData.projectManager || 'BA'}</Text>
+                        <Text>Developer</Text>
+                        <Text>{issueData.developer || 'Dev'}</Text>
+                        <Text>QA</Text>
+                        <Text>{issueData.qa || 'QA'}</Text>
+                        <Text>Release Manager</Text>
+                        <Text>{issueData.releaseManager || 'Manager'}</Text>
+                        <Text>VAPT Engineer</Text>
+                        <Text>{issueData.vaptEngineer || 'VAPT'}</Text>
+                      </SimpleGrid>
+                    </Card>
+                  </Box>
+                </Flex>
+                <Card mt={2}>
+                  <Flex gap={2}>
+                    <Box flex="1" p={2}>
+                      <Heading fontSize="15px" mb={0.5}>
+                        Comments
+                      </Heading>
+                      <HStack align="flex-start" spacing={3} ml={2} my={2}>
+                        <Avatar name={username} size="sm" />
+                        <Box flex="1">
+                          {!showEditor ? (
+                            <Input placeholder='Add a comment'
+                              onFocus={() => {
+                                setShowEditor(true);
+                                setTimeout(() => {
+                                  quillRef.current?.getEditor().focus();
+                                }, 0);
+                              }}
+                              bg="white"
+                            />
+                          ) : (
+                            <VStack align="stretch" spacing={3}>
+                              <ReactQuill ref={quillRef} className="custom-quill"
+                                theme="snow"
+                                value={value}
+                                onChange={setValue}
+                                placeholder='Type your comment or @ to mention or notify someone.'
+                                modules={modules}
+                                formats={formats}
+                                style={{ minHeight: 80, fontSize: "0.7rem" }}
+                              />
+                              <HStack>
+                                <Button colorScheme='blue' size="sm" onClick={handleAddComment}>
+                                  Save
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => setShowEditor(false)} >
+                                  Cancel
+                                </Button>
+                              </HStack>
+                            </VStack>
+                          )}
+                        </Box>
+                      </HStack>
+                      {/* Comment List */}
+                      <VStack mt={2} align="stretch" spacing={4}
+                        overflowY="auto"
+                        p={3}
+                        bg="white"
+                        maxH="280px"
+                        className='container'
+                      >
+                        {comments.map((comment) => (
+                          <Box key={comment.commentId} mb={4} borderBottom="1px solid #E2E8F0" pb={3}>
+                            <HStack align="flex-start" spacing={3}>
+                              <Avatar name={comment.author} size="sm" />
+                              <Box flex="1">
+                                <Text fontWeight="bold">{comment.author}</Text>
+                                <Text fontSize="xs" color="gray.500" mb={1}>
+                                  {comment.timestamp}
+                                </Text>
+                                {/* Edit Mode */}
+                                {isEditing && editIndex === comment.commentId ? (
+                                  <Box>
+                                    <ReactQuill
+                                      ref={quillRef}
+                                      className="custom-quill"
+                                      onChange={setEditValue}
+                                      modules={modules}
+                                      formats={formats}
+                                      theme='snow'
+                                      style={{ minHeight: 80, fontSize: "0.7rem" }}
+                                    />
+                                    <HStack mt={2}>
+                                      <Button colorScheme='blue' size="xs" onClick={handleSaveEdit}>Save</Button>
+                                      <Button size="xs" variant="ghost" onClick={() => { setIsEditing(false); setEditIndex(null); }}>Cancel</Button>
+                                    </HStack>
+                                  </Box>
+                                ) : (
+                                  <Box className='q1-editor'
+                                    dangerouslySetInnerHTML={{ __html: comment.text }} p={0} mb={2} />
+                                )}
+                                <HStack spacing={3} fontSize="sm" color="gray.500" pb={2}>
+                                  {!(isEditing && editIndex === comment.commentId) && (
+                                    <Button size="xs" variant="link" onClick={() => toggleReplyEditor(comment.commentId)}>Reply</Button>
+                                  )}
+                                  {comment.author === username && !isEditing && (
+                                    <Button size="xs" variant="link" onClick={() => handleEditClick(comment.commentId)}>Edit</Button>
+                                  )}
+                                </HStack>
+                                {/* Replies Section */}
+                                {replyEditors[comment.commentId] && (
+                                  <Box mt={2} ml={10}>
+                                    <ReactQuill
+                                      ref={replyQuillRefs.current[comment.commentId]}
+                                      className="custom-quill"
+                                      value={replyValues[comment.commentId] || ""}
+                                      onChange={(val) => handleReplyChange(val, comment.commentId)}
+                                      modules={modules}
+                                      formats={formats}
+                                      theme='snow'
+                                      style={{ minHeight: 60, fontSize: "0.7rem" }}
+                                    />
+                                    <HStack mt={2}>
+                                      <Button colorScheme='blue' size="xs" onClick={() => handleAddReply(comment.commentId)}>Submit</Button>
+                                      <Button size="xs" variant="ghost" onClick={() => toggleReplyEditor(comment.commentId)}>Cancel</Button>
+                                    </HStack>
+                                  </Box>
+                                )}
+                                {/* Display Replies */}
+                                {comment.replies && comment.replies.length > 0 && (
+                                  <VStack spacing={3} mt={2} pl={6} align="stretch">
+                                    {comment.replies.map((reply) => (
+                                      <Box key={reply.commentId} p={2} bg="gray.50" borderRadius="md">
+                                        <HStack spacing={2} align="center">
+                                          <Avatar name={reply.author} size="xs" />
+                                          <Text fontWeight="bold" fontSize="sm">{reply.author}</Text>
+                                          <Text fontSize="xs" color="gray.500">{reply.timestamp}</Text>
+                                        </HStack>
+                                        <Box mt={1} dangerouslySetInnerHTML={{ __html: reply.text }} />
+                                      </Box>
+                                    ))}
+                                  </VStack>
+                                )}
+                              </Box>
+                            </HStack>
+                          </Box>
+                        ))}
+                      </VStack>
+                    </Box>
+                  </Flex>
+                </Card>
+              </TabPanel>
+              <TabPanel p={0}>
+                <Box maxH="400px" overflowY="auto" border="1px solid #E2E8F0" borderRadius="md" p={3}>
+                  <Text fontWeight="bold" fontSize="md" mb={2}>Linked Work Items</Text>
+                  <Text fontSize="sm" mb={3} color="gray.500">is blocked by</Text>
+                  <VStack spacing={3} align="stretch">
+                    {linkedIssues.map((issue) => (
+                      <Flex
+                        key={issue.id}
+                        p={3}
+                        borderRadius="md"
+                        bg="white"
+                        boxShadow="sm"
+                        align="center"
+                        justify="space-between"
+                        _hover={{ boxShadow: "md", cursor: "pointer" }}
+                      >
+                        {/* Left Section: Issue Info */}
+                        <Flex align="center" gap={3}>
+                          <Icon as={FaBug} color="red.500" boxSize={5} />
+                          <Box>
+                            <Text
+                              onClick={() => window.location.href = `/admin/view/${issue.issueId}`}
+                              color="blue.600"
+                              fontWeight="bold"
+                              _hover={{ textDecoration: "underline" }}
+                            >
+                              {issue.issueId}
+                            </Text>
+                            <Text fontSize="sm" color="gray.600">
+                              {issue.summary.length > 80
+                                ? issue.summary.slice(0, 77) + "..."
+                                : issue.summary}
+                            </Text>
+                          </Box>
+                        </Flex>
 
-                    if (!response.ok) {
-                      throw new Error("Failed to submit the form.");
-                    }
-
-                    // If comments present, submit comment in separate API call
-                    if (transitionFormData.comment) {
-                      await axios.post(
-                        "http://localhost:8080/api/comments/postCommentByIssueId",
-                        {
-                          issueId: id,
-                          comment: transitionFormData.comments,
-                          timestamp: getISTDateTime(),
-                          commentBy: username,
+                        {/* Right Section: Assignee + Status */}
+                        <Flex align="center" gap={2}>
+                          <Tooltip label={issue.assignee} fontSize="sm" hasArrow>
+                            <Avatar size="sm" icon={<FaUserCircle />} />
+                          </Tooltip>
+                          <Tag
+                            size="sm"
+                            colorScheme={
+                              issue.status === "Closed" ? "green" :
+                                issue.status === "In Progress" ? "yellow" :
+                                  issue.status === "Open" ? "blue" :
+                                    "gray"
+                            }
+                          >
+                            {issue.status}
+                          </Tag>
+                        </Flex>
+                      </Flex>
+                    ))}
+                  </VStack>
+                </Box>
+              </TabPanel>
+              <TabPanel p="7px 0">
+                <Table variant="simple" mt={0}>
+                  <Thead>
+                    <Tr
+                      sx={{
+                        '& > th': {
+                          borderBottom: '2px solid',
+                          borderColor: 'gray.200',
+                        },
+                        '& > th:not(:last-child)': {
+                          textAlign: "start",
+                          padding: "4px 8px",
+                          _hover: {
+                            bg: 'gray.400',
+                            cursor: 'pointer',
+                          },
+                        },
+                      }}
+                    >
+                      <Th w="40%">Name</Th>
+                      <Th w="15%">Size</Th>
+                      <Th w="25%">Date Added</Th>
+                      <Th whiteSpace="nowrap" textAlign="end" w="20%"></Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody
+                    sx={{
+                      '& > tr': {
+                        fontSize: '0.9rem',
+                        _hover: {
+                          bg: 'gray.200',
+                          cursor: 'pointer',
                         }
-                      );
+                      }
+                    }}
+                  >
+                    {attachments.map((attachment) => {
+                      const fileType = getFileType(attachment.filename);
+                      const mimeType = getMimeType(fileType);
+                      const blobUrl = `data:${mimeType};base64,${attachment.fileData}`;
+                      return (
+                        <Tr key={attachment.id}
+                          sx={{
+                            '& > td': {
+                              padding: '4px 8px 4px 8px',
+                              textAlign: 'start'
+                            },
+                          }}
+                        >
+                          <Td>
+                            <HStack>
+                              {(() => {
+                                const ext = getFileType(attachment.filename);
+                                const mimeType = getMimeType(ext);
+                                if (mimeType.startsWith("image/")) {
+                                  return <Icon as={LuImage} boxSize={5} color="blue.600" />;
+                                } else if (mimeType === "text/plain") {
+                                  return <Icon as={LuFileText} boxSize={5} color="blue.600" />;
+                                } else {
+                                  return <Icon as={LuFile} boxSize={5} color="blue.600" />;
+                                }
+                              })()}
+                              <Tooltip label={`Uploaded by: ${attachment.author}`} placement="bottom" hasArrow>
+                                <Text ml={2} cursor="pointer">
+                                  {attachment.filename}
+                                </Text>
+                              </Tooltip>
+                            </HStack>
+                          </Td>
+                          <Td>{formatSize(attachment.size)}</Td>
+                          <Td>{formatDates(attachment.dateAdded)}</Td>
+                          <Td textAlign="cwn" whiteSpace="nowrap">
+                            <IconButton
+                              aria-label="Delete Attachment"
+                              icon={<LuTrash />}
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDelete(attachment.issueId, attachment.filename)}
+                              mr={2}
+                            />
+                            <IconButton
+                              aria-label="Download Attachment"
+                              icon={<LuDownload />}
+                              size="sm"
+                              variant="ghost"
+                              as="a"
+                              href={blobUrl}
+                              download={attachment.filename}
+                            />
+                          </Td>
+                        </Tr>
+                      )
                     }
+                    )}
+                  </Tbody>
+                </Table>
+              </TabPanel>
 
-                    toast.success("Status Transition Successful!");
-                    setTransitionFormData({});
-                    setIsTransitionPopupOpen(false);
-                    handleStatusChange(transitionPopupData?.toStatus);
-                  } catch (error) {
-                    toast.error("Error submitting the form.");
-                    console.error(error);
-                  }
-                }}
-              >
-                Submit
-              </Button>
+              <TabPanel p={0}>
+                {/* Dates tab panel content */}
+                <Table variant="simple" size="sm">
+                  <Thead bg="gray.100">
+                    <Tr>
+                      <Th>Phase</Th>
+                      <Th>Planned Start</Th>
+                      <Th>Planned End</Th>
+                      <Th>Actual Start</Th>
+                      <Th>Actual End</Th>
+                      <Th>Duration</Th>
+                      <Th>Delay</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {[
+                      {
+                        title: "FSD",
+                        plannedStart: dateDetails?.plannedFSDStartDate,
+                        plannedEnd: dateDetails?.plannedFSDEndDate,
+                        actualStart: null,
+                        actualEnd: null,
+                      },
+                      {
+                        title: "QA Testing",
+                        plannedStart: dateDetails?.plannedQaTestingStartDate,
+                        plannedEnd: dateDetails?.plannedQaTestingEndDate,
+                        actualStart: dateDetails?.actualQaTestingStartDate,
+                        actualEnd: dateDetails?.actualQaTestingEndDate,
+                      },
+                      {
+                        title: "UAT",
+                        plannedStart: dateDetails?.plannedUatStartDate,
+                        plannedEnd: dateDetails?.plannedUatEndDate,
+                        actualStart: null,
+                        actualEnd: null,
+                      },
+                      {
+                        title: "Go Live",
+                        plannedStart: dateDetails?.plannedGoLiveDate,
+                        plannedEnd: null,
+                        actualStart: null,
+                        actualEnd: dateDetails?.actualGoLiveDate,
+                      },
+                    ].map((row) => {
+                      const formatDate = (d) => d ? new Date(d).toLocaleDateString() : "-";
+                      const duration = (s, e) => (s && e) ? `${(new Date(e) - new Date(s)) / (1000 * 3600 * 24)} day(s)` : "-";
+                      const delay = (planned, actual) => (planned && actual)
+                        ? `${(new Date(actual) - new Date(planned)) / (1000 * 3600 * 24)} day(s)`
+                        : "-";
 
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setTransitionFormData({});
-                  setIsTransitionPopupOpen(false);
-                }}
-              >
-                Cancel
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      </Box >
+                      return (
+                        <Tr key={row.title}>
+                          <Td>{row.title}</Td>
+                          <Td>{formatDate(row.plannedStart)}</Td>
+                          <Td>{formatDate(row.plannedEnd)}</Td>
+                          <Td>{formatDate(row.actualStart)}</Td>
+                          <Td>{formatDate(row.actualEnd)}</Td>
+                          <Td>{duration(row.plannedStart, row.plannedEnd)}</Td>
+                          <Td>{delay(row.plannedEnd, row.actualEnd)}</Td>
+                        </Tr>
+                      );
+                    })}
+                  </Tbody>
+                </Table>
+              </TabPanel>
+              <TabPanel>
+                <Box maxH="500px" overflowY="auto" p={2}>
+                  <Text fontWeight="bold" fontSize="md" mb={3}>Subtasks</Text>
+                  <VStack spacing={4} align="stretch">
+                    {subTasks.map((task) => {
+                      let typeIcon;
+                      switch ((task.issueType || "").toLowerCase()) {
+                        case 'maintenance':
+                          typeIcon = <MdAttachMoney color="green" size={20} />;
+                          break;
+                        case 'qa':
+                          typeIcon = <PiTestTubeFill color="purple" size={20} />;
+                          break;
+                        default:
+                          typeIcon = <MdAssignment color="blue" size={20} />;
+                      }
+
+                      const priorityIcon = <FaArrowUp color="red" />;
+                      const statusColor =
+                        (task.status || "").toLowerCase().includes("close") ? "green.100"
+                          : (task.status || "").toLowerCase().includes("development") ? "blue.100"
+                            : "gray.100";
+
+                      return (
+                        <Flex
+                          key={task.id}
+                          p={4}
+                          bg="white"
+                          borderRadius="md"
+                          boxShadow="sm"
+                          justify="space-between"
+                          align="center"
+                          _hover={{ boxShadow: "md", cursor: "pointer" }}
+                          onClick={() => window.location.href = `/admin/view/${task.issueId}`}
+                        >
+                          {/* Left section with icon, ID, Summary */}
+                          <HStack spacing={4}>
+                            <Box>{typeIcon}</Box>
+                            <Box>
+                              <Text fontWeight="bold" color="blue.600">
+                                {task.issueId}
+                              </Text>
+                              <Text fontSize="sm" color="gray.600" noOfLines={1}>
+                                {task.summary}
+                              </Text>
+                            </Box>
+                          </HStack>
+
+                          {/* Right section with Priority, Assignee (Avatar only), Status */}
+                          <HStack spacing={4}>
+                            <Box>{priorityIcon}</Box>
+                            <Tooltip label={task.assignee} fontSize="sm" hasArrow>
+                              <Avatar size="sm" icon={<FaUserCircle />} name={task.assignee} />
+                            </Tooltip>
+                            <Tag bg={statusColor} color="gray.800" fontWeight="bold" px={3} py={1}>
+                              {task.status}
+                            </Tag>
+                          </HStack>
+                        </Flex>
+                      );
+                    })}
+                  </VStack>
+                </Box>
+              </TabPanel>
+              <TabPanel>
+                <EffortEstimationTable
+                  issueData={issueData}
+                  subTasks={subTasks}
+                  linkedIssues={linkedIssues}
+                  nestedChildCRs={nestedChildCRs}
+                  dateDetails={dateDetails}
+                  allUsers={allUsers}
+                />
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+        </Box>
+      </Card>
     </Card >
   );
+
 }

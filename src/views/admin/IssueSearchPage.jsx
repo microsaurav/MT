@@ -15,6 +15,7 @@ const IssueSearchPage = () => {
     for (const [key, value] of params.entries()) {
       filterObj[key] = value;
     }
+    console.log('Filters:', filterObj);
     return filterObj;
   };
 
@@ -48,7 +49,7 @@ const IssueSearchPage = () => {
   };
 
   return (
-    <Box pt={{ base: '130px', md: '55px', xl: '55px' }} position="relative" maxH="490px">
+    <Box pt={{ base: '130px', md: '15px', xl: '15px' }} position="relative" h="100%" w="100%" overflowY="hidden">
       <TopFilters filters={filters} setFilters={updateFilters} />
       <IssueTable filters={filters} />
     </Box>
